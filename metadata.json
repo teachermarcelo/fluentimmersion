@@ -1,0 +1,11 @@
+{
+  "name": "FLUENT IMMERSION - English Learning Platform",
+  "description": "Plataforma interativa com gamificação, reconhecimento e correção de pronúncia com IA em tempo real (A0 a C2), área kids, sala ao vivo do Teacher Marcelo e painel de gestão.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

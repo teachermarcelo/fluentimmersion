@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+}
+
+.font-kids {
+  font-family: 'Fredoka', cursive, sans-serif;
+}
+
+/* British Flag inspired accents & gradients */
+.uk-gradient-hero {
+  background: linear-gradient(135deg, #0b1b3d 0%, #102a5c 50%, #8b1122 100%);
+}
+
+.uk-stripes-accent {
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(207, 20, 43, 0.08),
+    rgba(207, 20, 43, 0.08) 12px,
+    transparent 12px,
+    transparent 24px
+  );
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.dark .glass-card {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+/* Print styles for exportable PDF academic reports */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .glass-card {
+    box-shadow: none !important;
+    border: 1px solid #cbd5e1 !important;
+    background: white !important;
+  }
+}
