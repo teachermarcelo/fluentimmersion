@@ -121,6 +121,79 @@ export const fetchStudentsFromSupabase = async (): Promise<StudentAcademicRecord
   }
 };
 
+export const syncLessonToSupabase = async (lesson: Lesson) => {
+  const supabase = getSupabaseClient();
+  if (!supabase) return { success: false, message: 'Supabase não conectado' };
+  try {
+    const { error } = await supabase.from('lessons').upsert({
+      id: lesson.id,
+      title: lesson.title,
+      level: lesson.level,
+      skill: lesson.skill,
+      category: lesson.category,
+      target_audience: lesson.targetAudience || 'curriculum_adults',
+      order_index: lesson.orderIndex || 1,
+      duration_minutes: lesson.durationMinutes || 15,
+      xp_reward: lesson.xpReward || 50,
+      description: lesson.description || '',
+      icon_name: lesson.iconName || 'BookOpen',
+      custom_html: lesson.customHtml || '',
+      reading_text: lesson.content?.readingText || '',
+      is_published: true,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) throw error;
+    return { success: true };
+  } catch (err: any) {
+    console.warn('Erro ao salvar lição no Supabase:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+export const deleteLessonFromSupabase = async (lessonId: string) => {
+  const supabase = getSupabaseClient();
+  if (!supabase) return { success: false, message: 'Supabase não conectado' };
+  try {
+    const { error } = await supabase.from('lessons').delete().eq('id', lessonId);
+    if (error) throw error;
+    return { success: true };
+  } catch (err: any) {
+    console.warn('Erro ao excluir lição no Supabase:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+export const fetchLessonsFromSupabase = async (): Promise<Lesson[] | null> => {
+  const supabase = getSupabaseClient();
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('lessons')
+      .select('*')
+      .order('order_index', { ascending: true });
+    if (error || !data || data.length === 0) return null;
+    return data.map((d: any) => ({
+      id: d.id,
+      title: d.title,
+      level: d.level,
+      skill: d.skill,
+      category: d.category,
+      targetAudience: d.target_audience,
+      orderIndex: d.order_index,
+      durationMinutes: d.duration_minutes,
+      xpReward: d.xp_reward,
+      description: d.description,
+      iconName: d.icon_name,
+      customHtml: d.custom_html,
+      content: {
+        readingText: d.reading_text,
+      },
+    }));
+  } catch {
+    return null;
+  }
+};
+
 /**
  * SQL DDL Schema for Supabase
  * Teacher can copy-paste into the Supabase SQL Editor to create all tables with 1 click

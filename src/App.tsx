@@ -14,7 +14,7 @@ import { CEFRLevel, UserProfile, NotificationItem, Lesson } from './types';
 import { MessageSquare, Phone, ShieldCheck, Heart, Lock, Shield, UserCheck } from 'lucide-react';
 import { sounds } from './utils/audioEffects';
 import { getOrCreateStudentProfile, persistStudentProgress, TRACK_INFO, StudentTrack } from './utils/studentManager';
-import { saveCustomLesson } from './utils/lessonManager';
+import { saveCustomLesson, syncLessonsFromSupabase } from './utils/lessonManager';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
@@ -117,6 +117,11 @@ export default function App() {
         }
       }
     }
+
+    // Always fetch remote lessons from Supabase on startup so student links see published lessons
+    syncLessonsFromSupabase().catch((err) => {
+      console.warn('Initial lessons sync from Supabase:', err);
+    });
   }, []);
 
   // Notifications state

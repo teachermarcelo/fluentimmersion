@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Layers,
   BookOpen,
@@ -21,7 +21,7 @@ import { speakText } from '../utils/speech';
 import { sounds } from '../utils/audioEffects';
 import { fireCelebrationConfetti } from '../utils/confetti';
 import { InteractiveLessonViewer } from './InteractiveLessonViewer';
-import { getAllAvailableLessons } from '../utils/lessonManager';
+import { getAllAvailableLessons, syncLessonsFromSupabase } from '../utils/lessonManager';
 
 interface CurriculumViewProps {
   currentLevel: CEFRLevel;
@@ -47,7 +47,32 @@ export const CurriculumView: React.FC<CurriculumViewProps> = ({
   const [translatedWord, setTranslatedWord] = useState<{ word: string; translation: string; note?: string } | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
 
-  const allLessons = getAllAvailableLessons();
+  // Reactive lessons list: updates immediately when new lesson is created or loaded from Supabase
+  const [allLessons, setAllLessons] = useState<Lesson[]>(() => getAllAvailableLessons());
+
+  useEffect(() => {
+    // 1. Initial local load
+    setAllLessons(getAllAvailableLessons());
+
+    // 2. Sync from Supabase cloud (allows any student to see lessons created by teacher)
+    syncLessonsFromSupabase().then((lessons) => {
+      if (lessons && lessons.length > 0) {
+        setAllLessons(lessons);
+      }
+    });
+
+    // 3. Listen to local updates when teacher creates or modifies lessons
+    const handleUpdate = () => {
+      setAllLessons(getAllAvailableLessons());
+    };
+    window.addEventListener('fluent_lessons_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('fluent_lessons_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
+
   const filteredLessons = allLessons
     .filter((l) => {
       const levelMatch = l.level === currentLevel;

@@ -1,7 +1,19 @@
 import { Lesson, CEFRLevel, SkillType, LessonCategory } from '../types';
 import { ALL_LESSONS } from '../data/mockData';
+import {
+  syncLessonToSupabase,
+  deleteLessonFromSupabase,
+  fetchLessonsFromSupabase,
+} from '../lib/supabase';
 
 const CUSTOM_LESSONS_STORAGE_KEY = 'fluent_immersion_custom_lessons';
+
+// Event notification helper for real-time reactive UI updates
+export const notifyLessonsUpdated = () => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('fluent_lessons_updated'));
+  }
+};
 
 // Pre-loaded Lesson 13 artifact reference
 export const PRELOADED_LESSON_13: Lesson = {
@@ -40,6 +52,25 @@ export const PRELOADED_LESSON_FRUITS_A0: Lesson = {
     readingText: 'At the market. Fresh fruits, colors and taste. Say 12 common fruits, describe colors and taste (sweet, sour), say I like / I don\'t like, and ask How much is it?',
   },
   customHtml: '/lessons/lesson-fruits-a0.html',
+};
+
+// Pre-loaded Lesson Family Members A1 (Unit 09 Everyday Life)
+export const PRELOADED_LESSON_FAMILY_A1: Lesson = {
+  id: 'custom-les-artifact-family-members-a1',
+  level: 'A1',
+  title: 'Family Members | A1 Interactive English Lesson',
+  description: 'Learn to use I, you, he, she, it, we, and they to describe yourself, other people, animals, and things.',
+  skill: 'speaking',
+  category: 'geral',
+  targetAudience: 'curriculum_adults',
+  orderIndex: 16,
+  durationMinutes: 120,
+  xpReward: 150,
+  iconName: 'Users',
+  content: {
+    readingText: 'Unit 09 · A1 · English for Everyday Life. Family Members and Subject Pronouns: I, you, he, she, it, we, they.',
+  },
+  customHtml: '/lessons/lesson-family-members-a1.html',
 };
 
 /**
@@ -125,7 +156,7 @@ export function getAllAvailableLessons(): Lesson[] {
     }
   }
 
-  // Preloaded interactive lessons (Lesson 13 Dates & Lesson Fruits A0)
+  // Preloaded interactive lessons (Lesson 13 Dates, Lesson Fruits A0, and Lesson Family Members A1)
   const preloaded: Lesson[] = [];
   const hasLesson13 =
     customLessons.some((l) => l.id === PRELOADED_LESSON_13.id || l.title.includes('Dates & Birthdays')) ||
@@ -137,6 +168,11 @@ export function getAllAvailableLessons(): Lesson[] {
     ALL_LESSONS.some((l) => l.title.includes('Fruits'));
   if (!hasLessonFruits) preloaded.push(PRELOADED_LESSON_FRUITS_A0);
 
+  const hasFamilyMembers =
+    customLessons.some((l) => l.id === PRELOADED_LESSON_FAMILY_A1.id || l.title.includes('Family Members')) ||
+    ALL_LESSONS.some((l) => l.title.includes('Family Members'));
+  if (!hasFamilyMembers) preloaded.push(PRELOADED_LESSON_FAMILY_A1);
+
   const baseLessons = [...preloaded, ...ALL_LESSONS];
 
   // Merge custom lessons, prioritizing newer custom ones
@@ -147,7 +183,7 @@ export function getAllAvailableLessons(): Lesson[] {
 }
 
 /**
- * Saves a new custom lesson to localStorage
+ * Saves a new custom lesson to localStorage, memory, and Supabase cloud
  */
 export function saveCustomLesson(lesson: Lesson): Lesson[] {
   if (typeof window === 'undefined') return [lesson];
@@ -163,15 +199,44 @@ export function saveCustomLesson(lesson: Lesson): Lesson[] {
     updated = [lesson, ...current];
   }
 
-  // Persist only the custom ones to localStorage
+  // Update in-memory ALL_LESSONS so all active components instantly reflect it
+  const existingMockIdx = ALL_LESSONS.findIndex((l) => l.id === lesson.id);
+  if (existingMockIdx >= 0) {
+    ALL_LESSONS[existingMockIdx] = lesson;
+  } else {
+    ALL_LESSONS.unshift(lesson);
+  }
+
+  // Persist only the custom ones to localStorage with quota protection
   const onlyCustom = updated.filter((l) => l.id.startsWith('custom-les-'));
-  localStorage.setItem(CUSTOM_LESSONS_STORAGE_KEY, JSON.stringify(onlyCustom));
+  try {
+    localStorage.setItem(CUSTOM_LESSONS_STORAGE_KEY, JSON.stringify(onlyCustom));
+  } catch (err) {
+    console.warn('Quota exceeded on localStorage, storing trimmed customHtml:', err);
+    try {
+      const lightweight = onlyCustom.map((l) => ({
+        ...l,
+        customHtml: l.customHtml && l.customHtml.length > 50000 ? l.customHtml.slice(0, 50000) : l.customHtml,
+      }));
+      localStorage.setItem(CUSTOM_LESSONS_STORAGE_KEY, JSON.stringify(lightweight));
+    } catch (e) {
+      console.warn('Não foi possível persistir no localStorage:', e);
+    }
+  }
+
+  // Sync to Supabase cloud in background
+  syncLessonToSupabase(lesson).catch((err) =>
+    console.warn('Erro ao sincronizar lição com Supabase:', err)
+  );
+
+  // Notify all views that lessons list changed
+  notifyLessonsUpdated();
 
   return updated;
 }
 
 /**
- * Deletes a custom lesson
+ * Deletes a custom lesson from local storage and Supabase
  */
 export function deleteCustomLesson(id: string): Lesson[] {
   if (typeof window === 'undefined') return [];
@@ -179,8 +244,47 @@ export function deleteCustomLesson(id: string): Lesson[] {
   const current = getAllAvailableLessons();
   const updated = current.filter((l) => l.id !== id);
 
+  // Remove from in-memory ALL_LESSONS
+  const mockIdx = ALL_LESSONS.findIndex((l) => l.id === id);
+  if (mockIdx >= 0) {
+    ALL_LESSONS.splice(mockIdx, 1);
+  }
+
   const onlyCustom = updated.filter((l) => l.id.startsWith('custom-les-'));
-  localStorage.setItem(CUSTOM_LESSONS_STORAGE_KEY, JSON.stringify(onlyCustom));
+  try {
+    localStorage.setItem(CUSTOM_LESSONS_STORAGE_KEY, JSON.stringify(onlyCustom));
+  } catch {}
+
+  deleteLessonFromSupabase(id).catch((err) =>
+    console.warn('Erro ao excluir lição do Supabase:', err)
+  );
+
+  notifyLessonsUpdated();
 
   return updated;
+}
+
+/**
+ * Sincroniza lições salvas no Supabase para o cliente local (permite que qualquer aluno veja)
+ */
+export async function syncLessonsFromSupabase(): Promise<Lesson[]> {
+  try {
+    const remote = await fetchLessonsFromSupabase();
+    if (remote && remote.length > 0) {
+      const current = getAllAvailableLessons();
+      const map = new Map<string, Lesson>();
+      current.forEach((l) => map.set(l.id, l));
+      remote.forEach((l) => map.set(l.id, l));
+      const merged = Array.from(map.values());
+      const onlyCustom = merged.filter((l) => l.id.startsWith('custom-les-'));
+      try {
+        localStorage.setItem(CUSTOM_LESSONS_STORAGE_KEY, JSON.stringify(onlyCustom));
+      } catch {}
+      notifyLessonsUpdated();
+      return merged;
+    }
+  } catch (err) {
+    console.warn('Erro ao sincronizar lições do Supabase:', err);
+  }
+  return getAllAvailableLessons();
 }

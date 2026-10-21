@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Sparkles,
   Gamepad2,
@@ -32,6 +32,17 @@ export const KidsView: React.FC<KidsViewProps> = ({ onAwardXP, onOpenWhatsApp })
   const [activeTab, setActiveTab] = useState<'games' | 'parents'>('games');
   const [activeGame, setActiveGame] = useState<string | null>(null);
   const [selectedKidsLesson, setSelectedKidsLesson] = useState<Lesson | null>(null);
+  const [allLessons, setAllLessons] = useState<Lesson[]>(() => getAllAvailableLessons());
+
+  useEffect(() => {
+    const refresh = () => setAllLessons(getAllAvailableLessons());
+    window.addEventListener('fluent_lessons_updated', refresh);
+    window.addEventListener('storage', refresh);
+    return () => {
+      window.removeEventListener('fluent_lessons_updated', refresh);
+      window.removeEventListener('storage', refresh);
+    };
+  }, []);
 
   // Phonics Pop Game state
   const phonicsItems = [
@@ -306,7 +317,7 @@ export const KidsView: React.FC<KidsViewProps> = ({ onAwardXP, onOpenWhatsApp })
           )}
 
           {/* Kids Interactive Lessons created by Teacher Marcelo */}
-          {getAllAvailableLessons().filter((l) => l.targetAudience === 'kids').length > 0 && (
+          {allLessons.filter((l) => l.targetAudience === 'kids').length > 0 && (
             <div className="glass-card rounded-3xl p-6 sm:p-8 space-y-4 border-2 border-amber-300">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -321,7 +332,7 @@ export const KidsView: React.FC<KidsViewProps> = ({ onAwardXP, onOpenWhatsApp })
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {getAllAvailableLessons().filter((l) => l.targetAudience === 'kids').map((lesson) => (
+                {allLessons.filter((l) => l.targetAudience === 'kids').map((lesson) => (
                   <div
                     key={lesson.id}
                     className="p-5 rounded-2xl bg-gradient-to-tr from-amber-50 to-pink-50 dark:from-slate-800 dark:to-slate-900 border border-amber-200 dark:border-slate-700 space-y-3"

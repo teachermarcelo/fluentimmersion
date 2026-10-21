@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Family Members | A1 Interactive English Lesson</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --primary: #0b1b3d;
+      --accent: #c8102e;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --highlight: #f59e0b;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 20px; line-height: 1.5; }
+    .container { max-width: 900px; margin: 0 auto; }
+    
+    /* Header */
+    .hero {
+      background: linear-gradient(135deg, #0b1b3d, #1e3a8a);
+      color: white;
+      padding: 32px;
+      border-radius: 24px;
+      box-shadow: 0 10px 25px -5px rgba(11,27,61,0.3);
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .badge-pill {
+      display: inline-block;
+      background: #c8102e;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .hero h1 { font-size: 28px; font-weight: 900; margin-bottom: 8px; line-height: 1.2; }
+    .hero p { font-size: 14px; opacity: 0.9; max-width: 600px; }
+    .meta-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; font-size: 12px; font-weight: 700; }
+    .meta-tag { background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 8px; }
+
+    /* Sections */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.04);
+    }
+    .card h2 {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--primary);
+    }
+    
+    /* Vocabulary Grid */
+    .vocab-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+    }
+    .vocab-item {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      transition: all 0.2s;
+      cursor: pointer;
+      position: relative;
+    }
+    .vocab-item:hover {
+      border-color: #3b82f6;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px -2px rgba(0,0,0,0.06);
+    }
+    .vocab-word { font-size: 17px; font-weight: 800; color: #0b1b3d; display: block; }
+    .vocab-ipa { font-size: 12px; color: #64748b; font-family: monospace; }
+    .vocab-pt { font-size: 13px; color: #334155; margin-top: 4px; font-weight: 500; }
+    .audio-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: #e2e8f0;
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      transition: background 0.2s;
+    }
+    .audio-btn:hover { background: #cbd5e1; }
+
+    /* Grammar Section */
+    .pronouns-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+    .pronouns-table th, .pronouns-table td {
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      text-align: left;
+    }
+    .pronouns-table th { background: #f1f5f9; font-weight: 700; color: #1e293b; }
+    .pronouns-table tr:nth-child(even) { background: #f8fafc; }
+
+    /* Dialogue */
+    .dialogue-box {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    .speaker { font-weight: 800; color: #1e3a8a; }
+
+    /* Quiz */
+    .quiz-q { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #f1f5f9; }
+    .quiz-title { font-weight: 700; font-size: 15px; margin-bottom: 8px; }
+    .options-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+    .opt-btn {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .opt-btn:hover { background: #e2e8f0; }
+    .opt-btn.correct { background: #dcfce7; border-color: #22c55e; color: #15803d; }
+    .opt-btn.wrong { background: #fee2e2; border-color: #ef4444; color: #b91c1c; }
+
+    /* Completion Banner */
+    .finish-bar {
+      text-align: center;
+      padding: 24px;
+      background: linear-gradient(to right, #0b1b3d, #c8102e);
+      border-radius: 20px;
+      color: white;
+    }
+    .btn-finish {
+      background: #f59e0b;
+      color: #0f172a;
+      border: none;
+      padding: 14px 28px;
+      font-size: 15px;
+      font-weight: 900;
+      border-radius: 12px;
+      cursor: pointer;
+      margin-top: 12px;
+      box-shadow: 0 4px 12px rgba(245,158,11,0.4);
+      transition: transform 0.1s;
+    }
+    .btn-finish:active { transform: scale(0.97); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Hero Banner -->
+    <div class="hero">
+      <span class="badge-pill">UNIT 09 • A1 • ENGLISH FOR EVERYDAY LIFE</span>
+      <h1>Family Members | Interactive English Lesson</h1>
+      <p>Aprenda a falar sobre sua família em inglês britânico. Domine vocabulário de parentesco, pronomes pessoais (I, you, he, she, it, we, they) e diálogos do dia a dia.</p>
+      <div class="meta-row">
+        <span class="meta-tag">🇬🇧 Sotaque Britânico (RP)</span>
+        <span class="meta-tag">⏱️ 120 minutos</span>
+        <span class="meta-tag">🏆 +150 XP</span>
+        <span class="meta-tag">Nível A1 Iniciante</span>
+      </div>
+    </div>
+
+    <!-- 1. Vocabulary Grid with TTS Audio -->
+    <div class="card">
+      <h2>👥 1. Family Members (Membros da Família)</h2>
+      <p style="font-size: 13px; color: var(--muted); margin-bottom: 16px;">
+        Toque em qualquer card ou no botão 🔊 para ouvir a pronúncia britânica autêntica:
+      </p>
+
+      <div class="vocab-grid">
+        <div class="vocab-item" onclick="speak('Father')">
+          <button class="audio-btn" onclick="event.stopPropagation(); speak('Father')">🔊</button>
+          <span class="vocab-word">Father / Dad</span>
+          <span class="vocab-ipa">/ˈfɑː.ðər/</span>
+          <p class="vocab-pt">Pai</p>
+        </div>
+
+        <div class="vocab-item" onclick="speak('Mother')">
+          <button class="audio-btn" onclick="event.stopPropagation(); speak('Mother')">🔊</button>
+          <span class="vocab-word">Mother / Mum</span>
+          <span class="vocab-ipa">/ˈmʌð.ər/</span>
+          <p class="vocab-pt">Mãe</p>
+        </div>
+
+        <div class="vocab-item" onclick="speak('Parents')">
+          <button class="audio-btn" onclick="event.stopPropagation(); speak('Parents')">🔊</button>
+          <span class="vocab-word">Parents</span>
+          <span class="vocab-ipa">/ˈpeə.rənts/</span>
+          <p class="vocab-pt">Pais (Pai e Mãe)</p>
+        </div>
+
+        <div class="vocab-item" onclick="speak('Brother')">
+          <button class="audio-btn" onclick="event.stopPropagation(); speak('Brother')">🔊</button>
+          <span class="vocab-word">Brother</span>
+          <span class="vocab-ipa">/ˈbrʌð.ər/</span>
+          <p class="vocab-pt">Irmão</p>
+        </div>
+
+        <div class="vocab-item" onclick="speak('Sister')">
+          <button class="audio-btn" onclick="event.stopPropagation(); speak('Sister')">🔊</button>
+          <span class="vocab-word">Sister</span>
+          <span class="vocab-ipa">/ˈsɪs.tər/</span>
+          <p class="vocab-pt">Irmã</p>
+        </div>
+
+        <div class="vocab-item" onclick="speak('Son')">
+          <button class="audio-btn" onclick="event.stopPropagation(); speak('Son')">🔊</button>
+          <span class="vocab-word">Son</span>
+          <span class="vocab-ipa">/sʌn/</span>
+          <p class="vocab-pt">Filho</p>
+        </div>
+
+        <div class="vocab-item" onclick="speak('Daughter')">
+          <button class="audio-btn" onclick="event.stopPropagation(); speak('Daughter')">🔊</button>
+          <span class="vocab-word">Daughter</span>
+          <span class="vocab-ipa">/ˈdɔː.tər/</span>
+          <p class="vocab-pt">Filha</p>
+        </div>
+
+        <div class="vocab-item" onclick="speak('Grandfather')">
+          <button class="audio-btn" onclick="event.stopPropagation(); speak('Grandfather')">🔊</button>
+          <span class="vocab-word">Grandfather / Grandad</span>
+          <span class="vocab-ipa">/ˈɡræn.fɑː.ðər/</span>
+          <p class="vocab-pt">Avô</p>
+        </div>
+
+        <div class="vocab-item" onclick="speak('Grandmother')">
+          <button class="audio-btn" onclick="event.stopPropagation(); speak('Grandmother')">🔊</button>
+          <span class="vocab-word">Grandmother / Granny</span>
+          <span class="vocab-ipa">/ˈɡræn.mʌð.ər/</span>
+          <p class="vocab-pt">Avó</p>
+        </div>
+
+        <div class="vocab-item" onclick="speak('Uncle')">
+          <button class="audio-btn" onclick="event.stopPropagation(); speak('Uncle')">🔊</button>
+          <span class="vocab-word">Uncle</span>
+          <span class="vocab-ipa">/ˈʌŋ.kəl/</span>
+          <p class="vocab-pt">Tio</p>
+        </div>
+
+        <div class="vocab-item" onclick="speak('Aunt')">
+          <button class="audio-btn" onclick="event.stopPropagation(); speak('Aunt')">🔊</button>
+          <span class="vocab-word">Aunt</span>
+          <span class="vocab-ipa">/ɑːnt/</span>
+          <p class="vocab-pt">Tia</p>
+        </div>
+
+        <div class="vocab-item" onclick="speak('Cousin')">
+          <button class="audio-btn" onclick="event.stopPropagation(); speak('Cousin')">🔊</button>
+          <span class="vocab-word">Cousin</span>
+          <span class="vocab-ipa">/ˈkʌz.ən/</span>
+          <p class="vocab-pt">Primo / Prima</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Grammar: Subject Pronouns -->
+    <div class="card">
+      <h2>📝 2. Subject Pronouns (Pronomes Pessoais)</h2>
+      <p style="font-size: 13px; color: var(--muted); margin-bottom: 14px;">
+        Use pronomes para substituir os nomes dos membros da família nas frases:
+      </p>
+
+      <table class="pronouns-table">
+        <thead>
+          <tr>
+            <th>Pronome</th>
+            <th>Significado</th>
+            <th>Exemplo Prático</th>
+            <th>Áudio</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>I</strong></td>
+            <td>Eu</td>
+            <td><em>I have a big family.</em></td>
+            <td><button class="audio-btn" style="position:static;" onclick="speak('I have a big family')">🔊</button></td>
+          </tr>
+          <tr>
+            <td><strong>You</strong></td>
+            <td>Você / Vocês</td>
+            <td><em>Do you have brothers?</em></td>
+            <td><button class="audio-btn" style="position:static;" onclick="speak('Do you have brothers?')">🔊</button></td>
+          </tr>
+          <tr>
+            <td><strong>He</strong></td>
+            <td>Ele (pai, irmão)</td>
+            <td><em>He is my father.</em></td>
+            <td><button class="audio-btn" style="position:static;" onclick="speak('He is my father.')">🔊</button></td>
+          </tr>
+          <tr>
+            <td><strong>She</strong></td>
+            <td>Ela (mãe, irmã)</td>
+            <td><em>She is my sister.</em></td>
+            <td><button class="audio-btn" style="position:static;" onclick="speak('She is my sister.')">🔊</button></td>
+          </tr>
+          <tr>
+            <td><strong>It</strong></td>
+            <td>Ele / Ela (coisas / animais)</td>
+            <td><em>It is my family's pet.</em></td>
+            <td><button class="audio-btn" style="position:static;" onclick="speak('It is my family pet.')">🔊</button></td>
+          </tr>
+          <tr>
+            <td><strong>We</strong></td>
+            <td>Nós</td>
+            <td><em>We live in London together.</em></td>
+            <td><button class="audio-btn" style="position:static;" onclick="speak('We live in London together.')">🔊</button></td>
+          </tr>
+          <tr>
+            <td><strong>They</strong></td>
+            <td>Eles / Elas</td>
+            <td><em>They are my parents.</em></td>
+            <td><button class="audio-btn" style="position:static;" onclick="speak('They are my parents.')">🔊</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 3. Dialogue -->
+    <div class="card">
+      <h2>💬 3. Real Dialogue (Conversa Real: Conhecendo a Família)</h2>
+
+      <div class="dialogue-box">
+        <p><span class="speaker">Oliver:</span> "Who is that in the photo, Lucas?"</p>
+        <p style="font-size: 12px; color: #64748b; margin-top: 2px;">(Quem é aquela na foto, Lucas?)</p>
+      </div>
+
+      <div class="dialogue-box" style="background:#fdf2f8; border-color:#ec4899;">
+        <p><span class="speaker" style="color:#9d174d;">Lucas:</span> "That is my mother. She lives in Manchester with my father."</p>
+        <p style="font-size: 12px; color: #64748b; margin-top: 2px;">(Aquela é minha mãe. Ela mora em Manchester com meu pai.)</p>
+      </div>
+
+      <div class="dialogue-box">
+        <p><span class="speaker">Oliver:</span> "Lovely! And do you have any brothers or sisters?"</p>
+        <p style="font-size: 12px; color: #64748b; margin-top: 2px;">(Que ótimo! E você tem irmãos ou irmãs?)</p>
+      </div>
+
+      <div class="dialogue-box" style="background:#fdf2f8; border-color:#ec4899;">
+        <p><span class="speaker" style="color:#9d174d;">Lucas:</span> "Yes, I have one younger brother and two older sisters."</p>
+        <p style="font-size: 12px; color: #64748b; margin-top: 2px;">(Sim, tenho um irmão mais novo e duas irmãs mais velhas.)</p>
+      </div>
+
+      <button class="opt-btn" style="margin-top: 8px; background:#0b1b3d; color:white;" onclick="speakDialogue()">
+        🔊 Ouvir Diálogo Completo com Sotaque Britânico
+      </button>
+    </div>
+
+    <!-- 4. Interactive Quiz -->
+    <div class="card">
+      <h2>✍️ 4. Quick Quiz (Desafio de Fixação)</h2>
+
+      <div class="quiz-q">
+        <div class="quiz-title">1. Como se diz "Pais" (pai e mãe juntos) em inglês?</div>
+        <div class="options-grid">
+          <button class="opt-btn" onclick="check(this, false)">A) Relatives</button>
+          <button class="opt-btn" onclick="check(this, true)">B) Parents</button>
+          <button class="opt-btn" onclick="check(this, false)">C) Fathers</button>
+        </div>
+      </div>
+
+      <div class="quiz-q">
+        <div class="quiz-title">2. Complete: "My mother is a doctor. _______ works in a hospital."</div>
+        <div class="options-grid">
+          <button class="opt-btn" onclick="check(this, false)">A) He</button>
+          <button class="opt-btn" onclick="check(this, true)">B) She</button>
+          <button class="opt-btn" onclick="check(this, false)">C) They</button>
+        </div>
+      </div>
+
+      <div class="quiz-q">
+        <div class="quiz-title">3. O filho do meu tio é meu:</div>
+        <div class="options-grid">
+          <button class="opt-btn" onclick="check(this, false)">A) Brother</button>
+          <button class="opt-btn" onclick="check(this, false)">B) Nephew</button>
+          <button class="opt-btn" onclick="check(this, true)">C) Cousin</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Finish Action -->
+    <div class="finish-bar">
+      <h3>🎉 Parabéns por concluir esta Masterclass!</h3>
+      <p style="font-size: 13px; opacity: 0.9; margin-top: 4px;">Clique no botão abaixo para registrar a conclusão e creditar seus 150 XP.</p>
+      <button class="btn-finish" onclick="finishLesson()">
+        Concluir Aula e Ganhar +150 XP 🚀
+      </button>
+    </div>
+  </div>
+
+  <script>
+    function speak(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-GB';
+        utterance.rate = 0.9;
+        const voices = window.speechSynthesis.getVoices();
+        const britishVoice = voices.find(v => v.lang.includes('GB') || v.name.includes('UK') || v.name.includes('British'));
+        if (britishVoice) utterance.voice = britishVoice;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    function speakDialogue() {
+      const dialogue = [
+        "Who is that in the photo, Lucas?",
+        "That is my mother. She lives in Manchester with my father.",
+        "Lovely! And do you have any brothers or sisters?",
+        "Yes, I have one younger brother and two older sisters."
+      ];
+      speak(dialogue.join(". "));
+    }
+
+    function check(btn, isCorrect) {
+      const parent = btn.parentElement;
+      parent.querySelectorAll('.opt-btn').forEach(b => {
+        b.classList.remove('correct', 'wrong');
+        b.disabled = true;
+      });
+      if (isCorrect) {
+        btn.classList.add('correct');
+        btn.textContent = '✅ ' + btn.textContent;
+      } else {
+        btn.classList.add('wrong');
+        btn.textContent = '❌ ' + btn.textContent;
+      }
+    }
+
+    function finishLesson() {
+      // Notifica o app host via postMessage se em iframe
+      window.parent.postMessage({ type: 'LESSON_COMPLETED', xpReward: 150 }, '*');
+      alert('🌟 Parabéns! Lição Family Members concluída com sucesso! +150 XP adicionados.');
+    }
+  </script>
+</body>
+</html>
