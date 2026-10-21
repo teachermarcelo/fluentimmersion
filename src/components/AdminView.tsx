@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Lock,
   Unlock,
@@ -14,6 +14,8 @@ import {
   ShieldAlert,
   Sparkles,
   Download,
+  FolderUp,
+  UploadCloud,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
@@ -565,6 +567,130 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
     } finally {
       setIsGeneratingAi(false);
     }
+  };
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const modalFileInputRef = useRef<HTMLInputElement>(null);
+  const [dragActive, setDragActive] = useState(false);
+
+  // Criar Nova Lição do Zero (reseta e carrega modelo limpo pedagógico britânico)
+  const handleNewLessonFromScratch = () => {
+    sounds.playPop();
+    const nextOrder = managedLessons.length + 1;
+    setLessonTitle('Nova Aula Interativa de Inglês Britânico');
+    setLessonCategory('geral');
+    setLessonLevel('A1');
+    setLessonSkill('speaking');
+    setLessonDuration(15);
+    setLessonXp(50);
+    setLessonOrderIndex(nextOrder);
+    setHtmlContent(`<!-- ESTRUTURA BASE DA AULA BRITÂNICA • FLUENT IMMERSION -->
+<div class="lesson-container" style="font-family: 'Inter', -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 24px; color: #1e293b;">
+  <!-- Cabeçalho Pedagógico -->
+  <header style="background: linear-gradient(135deg, #0b1b3d, #1e3a8a); color: white; padding: 28px; border-radius: 20px; box-shadow: 0 10px 25px -5px rgba(11, 27, 61, 0.3); margin-bottom: 24px;">
+    <div style="display: inline-block; background: #c8102e; color: white; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">
+      🇬🇧 Imersão Britânica • Nível A1
+    </div>
+    <h1 style="font-size: 26px; font-weight: 800; margin: 0 0 8px 0; line-height: 1.2;">
+      Greetings & Everyday Expressions
+    </h1>
+    <p style="font-size: 14px; opacity: 0.9; margin: 0; line-height: 1.5;">
+      Aprenda saudações naturais britânicas, fonética prática e diálogos do dia a dia.
+    </p>
+  </header>
+
+  <!-- Seção 1: Vocabulário -->
+  <section style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+    <h2 style="font-size: 18px; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 14px;">
+      📚 1. Key Vocabulary (Vocabulário-Chave)
+    </h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+      <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 14px;">
+        <span style="font-size: 16px; font-weight: 700; color: #0b1b3d; display: block;">Lovely to meet you</span>
+        <span style="font-size: 12px; color: #64748b; font-family: monospace;">/ˈlʌv.li tuː miːt juː/</span>
+        <p style="font-size: 13px; color: #334155; margin: 4px 0 0 0;">Muito prazer em conhecê-lo(a)</p>
+      </div>
+      <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 14px;">
+        <span style="font-size: 16px; font-weight: 700; color: #0b1b3d; display: block;">Have a good one</span>
+        <span style="font-size: 12px; color: #64748b; font-family: monospace;">/hæv ə ɡʊd wʌn/</span>
+        <p style="font-size: 13px; color: #334155; margin: 4px 0 0 0;">Tenha um bom dia / Até logo</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Seção 2: Diálogo -->
+  <section style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+    <h2 style="font-size: 18px; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 14px;">
+      💬 2. Real Dialogue (Diálogo Real)
+    </h2>
+    <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 14px; border-radius: 8px; margin-bottom: 10px;">
+      <p style="margin: 0; font-size: 14px; color: #1e3a8a;">
+        <strong>Teacher Marcelo:</strong> "Good morning! Are you ready for today's immersion?"<br/>
+        <em>(Bom dia! Você está pronto para a imersão de hoje?)</em>
+      </p>
+    </div>
+    <div style="background: #fdf2f8; border-left: 4px solid #ec4899; padding: 14px; border-radius: 8px;">
+      <p style="margin: 0; font-size: 14px; color: #831843;">
+        <strong>Student:</strong> "Yes, absolutely! Let's get started."<br/>
+        <em>(Sim, com certeza! Vamos começar.)</em>
+      </p>
+    </div>
+  </section>
+
+  <!-- Seção 3: Desafio -->
+  <section style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+    <h2 style="font-size: 18px; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 10px;">
+      ✍️ 3. Quick Challenge
+    </h2>
+    <p style="font-size: 14px; color: #475569; margin: 0 0 12px 0;">
+      Qual expressão é tipicamente britânica para dizer que algo é ótimo?
+    </p>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <button style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;">Brilliant!</button>
+      <button style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;">Awesome dude!</button>
+    </div>
+  </section>
+</div>`);
+    fireCelebrationConfetti();
+    setAiGeneratorSourceMsg('✨ Nova Lição iniciada do zero com modelo pedagógico britânico limpo!');
+    setAiGenSuccess(true);
+    setTimeout(() => setAiGenSuccess(false), 5000);
+  };
+
+  // Importar arquivo HTML diretamente do computador
+  const processUploadedFile = (file: File) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (!content) return;
+
+      const parsed = parseImportedLessonCode(content);
+      const title = parsed.detectedTitle || file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+      setLessonTitle(title);
+      setLessonLevel(parsed.detectedLevel);
+      setLessonSkill(parsed.detectedSkill);
+      setLessonDuration(parsed.detectedDuration);
+      setLessonXp(parsed.detectedXp);
+      setHtmlContent(content);
+      setImportRawCode(content);
+
+      sounds.playSuccess();
+      fireCelebrationConfetti();
+      setAiGeneratorSourceMsg(`📂 Arquivo "${file.name}" importado do computador com sucesso! (${(file.size / 1024).toFixed(1)} KB)`);
+      setAiGenSuccess(true);
+      setTimeout(() => setAiGenSuccess(false), 5000);
+      setIsImportModalOpen(false);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processUploadedFile(file);
+    }
+    e.target.value = '';
   };
 
   // Import raw HTML / standalone React artifact code handler
@@ -1155,26 +1281,78 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* HTML Code Editor */}
             <div className="glass-card rounded-3xl p-6 sm:p-8 space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 gap-2">
-                <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                  <Code className="w-4 h-4 text-purple-600" />
-                  Editor de Conteúdo & Parâmetros Pedagógicos
-                </h2>
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <Code className="w-4 h-4 text-purple-600" />
+                    Editor de Conteúdo & Parâmetros Pedagógicos
+                  </h2>
+                  <span className="text-xs text-purple-600 font-bold bg-purple-50 dark:bg-purple-950 px-2.5 py-1 rounded-full w-fit">
+                    Passo 2 de 3
+                  </span>
+                </div>
+
+                {/* BARRA DE AÇÕES RÁPIDAS PARA O TEACHER */}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {/* 1. NOVA LIÇÃO DO ZERO */}
+                  <button
+                    type="button"
+                    onClick={handleNewLessonFromScratch}
+                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+                    title="Limpar campos e criar uma lição nova do zero com estrutura pedagógica britânica"
+                  >
+                    <PlusCircle className="w-4 h-4" />
+                    <span>+ Nova Lição (Do Zero)</span>
+                  </button>
+
+                  {/* 2. IMPORTAR DO COMPUTADOR (ARQUIVO .HTML) */}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+                    title="Selecionar arquivo .html salvo no seu computador"
+                  >
+                    <FolderUp className="w-4 h-4" />
+                    <span>📂 Importar do PC (.html)</span>
+                  </button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept=".html,.htm,.txt"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+
+                  {/* 3. COLAR CÓDIGO / ARTIFACT */}
                   <button
                     type="button"
                     onClick={() => {
                       sounds.playPop();
                       setIsImportModalOpen(true);
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md flex items-center gap-1.5 transition active:scale-95"
+                    className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+                    title="Abrir janela para colar código HTML ou Artifact"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    Importar Artifact / Código
+                    <Code className="w-4 h-4" />
+                    <span>📋 Colar Código / Artifact</span>
                   </button>
-                  <span className="text-xs text-purple-600 font-bold bg-purple-50 dark:bg-purple-950 px-2.5 py-1 rounded-full">
-                    Passo 2 de 3
-                  </span>
+
+                  {/* 4. ATALHO PARA GERAR COM IA */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const aiInput = document.querySelector('input[placeholder*="tema"]') as HTMLInputElement;
+                      if (aiInput) {
+                        aiInput.scrollIntoView({ behavior: 'smooth' });
+                        aiInput.focus();
+                      }
+                    }}
+                    className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs shadow-md flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+                    title="Rolar até o assistente de IA britânica"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>✨ Gerar com IA</span>
+                  </button>
                 </div>
               </div>
 
@@ -2394,6 +2572,46 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
                   Cole código HTML standalone, React Artifacts (como a Lição de Datas), Web Apps ou scripts de TTS.
                 </p>
               </div>
+            </div>
+
+            {/* Direct File Upload from PC (Drag and drop or Click) */}
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragActive(true);
+              }}
+              onDragLeave={() => setDragActive(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragActive(false);
+                const file = e.dataTransfer.files?.[0];
+                if (file) processUploadedFile(file);
+              }}
+              onClick={() => modalFileInputRef.current?.click()}
+              className={`p-5 rounded-2xl border-2 border-dashed transition cursor-pointer text-center space-y-2 ${
+                dragActive
+                  ? 'border-purple-500 bg-purple-500/10'
+                  : 'border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/70'
+              }`}
+            >
+              <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-300 mx-auto flex items-center justify-center">
+                <FolderUp className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  📂 Clique aqui para selecionar o arquivo <span className="text-purple-600 font-mono">.html</span> do seu computador
+                </p>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Ou arraste e solte o arquivo aqui dentro. O sistema lê o código e preenche os campos automaticamente!
+                </p>
+              </div>
+              <input
+                type="file"
+                ref={modalFileInputRef}
+                accept=".html,.htm,.txt"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
             </div>
 
             {/* Quick Helper Buttons to test with preloaded Artifacts */}
