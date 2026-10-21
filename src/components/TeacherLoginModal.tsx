@@ -93,8 +93,18 @@ export const TeacherLoginModal: React.FC<TeacherLoginModalProps> = ({
           </button>
         </form>
 
-        <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/40 text-[11px] text-purple-800 dark:text-purple-300 text-center">
-          Dica: A senha inicial padrão é <strong>123456</strong> (você pode alterá-la na aba Segurança do painel).
+        <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/40 text-[11px] text-purple-800 dark:text-purple-300 flex items-center justify-between gap-2">
+          <span>Dica: Senha padrão <strong>123456</strong></span>
+          <button
+            type="button"
+            onClick={() => {
+              setPassword('123456');
+              setErrorMsg('');
+            }}
+            className="px-2.5 py-1 rounded-lg bg-purple-200 dark:bg-purple-900/80 hover:bg-purple-300 dark:hover:bg-purple-800 text-purple-900 dark:text-purple-100 font-bold text-[10px] uppercase transition cursor-pointer"
+          >
+            Preencher 123456
+          </button>
         </div>
       </div>
     </div>
