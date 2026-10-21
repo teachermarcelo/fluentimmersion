@@ -8,10 +8,13 @@ import { LiveClassView } from './components/LiveClassView';
 import { LeaderboardView } from './components/LeaderboardView';
 import { AdminView } from './components/AdminView';
 import { WhatsAppModal } from './components/WhatsAppModal';
+import { TeacherLoginModal } from './components/TeacherLoginModal';
 import { INITIAL_USER, TEACHER_MARCELO, ALL_LESSONS } from './data/mockData';
 import { CEFRLevel, UserProfile, NotificationItem, Lesson } from './types';
-import { MessageSquare, Phone, ShieldCheck, Heart } from 'lucide-react';
+import { MessageSquare, Phone, ShieldCheck, Heart, Lock, Shield, UserCheck } from 'lucide-react';
 import { sounds } from './utils/audioEffects';
+import { getOrCreateStudentProfile, persistStudentProgress, TRACK_INFO, StudentTrack } from './utils/studentManager';
+import { saveCustomLesson } from './utils/lessonManager';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
@@ -20,9 +23,43 @@ export default function App() {
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState<boolean>(false);
   const [whatsAppTopic, setWhatsAppTopic] = useState<string>('Gostaria de agendar uma aula ao vivo e tirar dúvidas pedagógicas.');
 
-  // Load user from localStorage or fallback
+  // Teacher mode: By default true ONLY if teacher enters via ?teacher=true, ?admin=true or previously authenticated
+  const [isTeacherMode, setIsTeacherMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      // Aluno oficial entrando por link exclusivo NUNCA entra em modo teacher
+      if (params.get('student')) {
+        sessionStorage.removeItem('fluent_teacher_auth');
+        return false;
+      }
+      if (params.get('teacher') === 'true' || params.get('admin') === 'true' || params.get('teacher') === '1') {
+        return true;
+      }
+      if (sessionStorage.getItem('fluent_teacher_auth') === 'true') {
+        return true;
+      }
+    }
+    return false;
+  });
+
+  const [isTeacherLoginModalOpen, setIsTeacherLoginModalOpen] = useState<boolean>(false);
+
+  // Load user: student or default
   const [user, setUser] = useState<UserProfile>(() => {
     if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const studentParam = params.get('student');
+      const levelParam = params.get('level') as CEFRLevel | null;
+      const trackParam = params.get('track') as StudentTrack | null;
+
+      if (studentParam) {
+        return getOrCreateStudentProfile(
+          decodeURIComponent(studentParam),
+          levelParam || undefined,
+          trackParam || undefined
+        );
+      }
+
       const saved = localStorage.getItem('fluent_immersion_user');
       if (saved) {
         try {
@@ -45,26 +82,38 @@ export default function App() {
       const params = new URLSearchParams(window.location.search);
       const studentParam = params.get('student');
       const levelParam = params.get('level') as CEFRLevel | null;
-      const trackParam = params.get('track');
+      const rawTrack = params.get('track');
+      const trackParam = (rawTrack as StudentTrack) || null;
+      const teacherParam = params.get('teacher') || params.get('admin');
 
-      if (studentParam) {
-        setUser((prev) => ({
-          ...prev,
-          name: decodeURIComponent(studentParam),
-          level: levelParam || prev.level,
-        }));
+      if (teacherParam === 'true' || teacherParam === '1') {
+        setIsTeacherMode(true);
+        sessionStorage.setItem('fluent_teacher_auth', 'true');
+        setCurrentTab('admin');
+      } else if (studentParam) {
+        // Aluno Oficial entrando por link exclusivo
+        setIsTeacherMode(false);
+        sessionStorage.removeItem('fluent_teacher_auth');
+        const studentProfile = getOrCreateStudentProfile(
+          decodeURIComponent(studentParam),
+          levelParam || undefined,
+          trackParam || undefined
+        );
+        setUser(studentProfile);
         setInvitedBanner({
-          name: decodeURIComponent(studentParam),
-          level: levelParam || undefined,
-          track: trackParam || undefined,
+          name: studentProfile.name,
+          level: studentProfile.level,
+          track: (studentProfile as any).enrolledTrack ? TRACK_INFO[(studentProfile as any).enrolledTrack as StudentTrack]?.label : undefined,
         });
 
-        if (trackParam === 'kids') {
+        if (rawTrack === 'kids') {
           setCurrentTab('kids');
-        } else if (trackParam === 'speaking') {
+        } else if (rawTrack === 'speaking') {
           setCurrentTab('speaking');
-        } else if (trackParam === 'curriculum' || trackParam === 'business' || trackParam === 'biblico' || trackParam === 'proficiencia') {
+        } else if (rawTrack === 'curriculum' || rawTrack === 'business' || rawTrack === 'biblico' || rawTrack === 'proficiencia') {
           setCurrentTab('curriculum');
+        } else {
+          setCurrentTab('dashboard');
         }
       }
     }
@@ -114,19 +163,51 @@ export default function App() {
 
   const handleUpdateLevel = (level: CEFRLevel) => {
     sounds.playPop();
-    setUser((prev) => ({ ...prev, level }));
+    setUser((prev) => {
+      const updated = { ...prev, level };
+      persistStudentProgress(updated);
+      return updated;
+    });
   };
 
   const handleAwardXP = (amount: number) => {
-    setUser((prev) => ({
-      ...prev,
-      xp: prev.xp + amount,
-      gems: prev.gems + Math.floor(amount / 10),
-      studiedMinutesToday: Math.min(prev.dailyGoalMinutes, prev.studiedMinutesToday + 5),
-    }));
+    sounds.playPop();
+    setUser((prev) => {
+      const updated: UserProfile = {
+        ...prev,
+        xp: prev.xp + amount,
+        gems: prev.gems + Math.floor(amount / 10),
+        studiedMinutesToday: Math.min(prev.dailyGoalMinutes, prev.studiedMinutesToday + 5),
+        accuracyRate: prev.accuracyRate === 0 ? 86 : prev.accuracyRate,
+      };
+      persistStudentProgress(updated);
+      return updated;
+    });
+  };
+
+  const handleSelectTab = (tab: string) => {
+    if (tab === 'admin' && !isTeacherMode) {
+      setIsTeacherLoginModalOpen(true);
+      return;
+    }
+    setCurrentTab(tab);
+  };
+
+  const handleToggleTeacherMode = () => {
+    if (isTeacherMode) {
+      setIsTeacherMode(false);
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('fluent_teacher_auth');
+      }
+      if (currentTab === 'admin') setCurrentTab('dashboard');
+      sounds.playPop();
+    } else {
+      setIsTeacherLoginModalOpen(true);
+    }
   };
 
   const handleAddCustomLesson = (newLesson: Lesson) => {
+    saveCustomLesson(newLesson);
     ALL_LESSONS.unshift(newLesson);
     sounds.playSuccess();
   };
@@ -147,7 +228,7 @@ export default function App() {
       {/* Top Navbar */}
       <Navbar
         currentTab={currentTab}
-        onSelectTab={setCurrentTab}
+        onSelectTab={handleSelectTab}
         user={user}
         onUpdateLevel={handleUpdateLevel}
         isDarkMode={isDarkMode}
@@ -160,6 +241,8 @@ export default function App() {
         onOpenWhatsApp={() => handleOpenWhatsAppWithTopic()}
         notifications={notifications}
         onMarkNotificationRead={handleMarkNotificationRead}
+        isTeacherMode={isTeacherMode}
+        onToggleTeacherMode={handleToggleTeacherMode}
       />
 
       {/* Main Content Area */}
@@ -190,10 +273,11 @@ export default function App() {
             </button>
           </div>
         )}
+
         {currentTab === 'dashboard' && (
           <DashboardView
             user={user}
-            onNavigateTab={setCurrentTab}
+            onNavigateTab={handleSelectTab}
             onOpenWhatsApp={() => handleOpenWhatsAppWithTopic()}
             isOffline={isOffline}
           />
@@ -234,7 +318,29 @@ export default function App() {
         )}
 
         {currentTab === 'admin' && (
-          <AdminView onAddCustomLesson={handleAddCustomLesson} />
+          isTeacherMode ? (
+            <AdminView onAddCustomLesson={handleAddCustomLesson} />
+          ) : (
+            <div className="glass-card rounded-3xl p-8 sm:p-12 text-center max-w-lg mx-auto space-y-6 my-12">
+              <div className="w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 flex items-center justify-center mx-auto shadow-md">
+                <Lock className="w-8 h-8" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-slate-900 dark:text-slate-100">
+                  Área Restrita ao Teacher Marcelo
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                  Esta seção é exclusiva para coordenação pedagógica, cadastro de turmas e emissão de certificados.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsTeacherLoginModalOpen(true)}
+                className="px-6 py-3 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs uppercase tracking-wider shadow-lg transition"
+              >
+                Digitar Senha do Professor
+              </button>
+            </div>
+          )
         )}
       </main>
 
@@ -258,8 +364,22 @@ export default function App() {
         defaultTopic={whatsAppTopic}
       />
 
+      {/* Teacher Authentication Modal */}
+      <TeacherLoginModal
+        isOpen={isTeacherLoginModalOpen}
+        onClose={() => setIsTeacherLoginModalOpen(false)}
+        onSuccess={() => {
+          setIsTeacherMode(true);
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('fluent_teacher_auth', 'true');
+          }
+          setIsTeacherLoginModalOpen(false);
+          setCurrentTab('admin');
+        }}
+      />
+
       {/* Global Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 py-8 px-4 sm:px-6 lg:px-8 text-xs text-slate-500 dark:text-slate-400 no-print">
+      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 py-8 px-4 sm:px-6 lg:px-8 text-xs text-slate-500 dark:text-slate-400 no-print mt-12">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             {/* British miniature flag badge */}
@@ -270,6 +390,31 @@ export default function App() {
             <span className="font-bold text-slate-700 dark:text-slate-300">
               FLUENT IMMERSION • Plataforma Interativa de Língua Inglesa
             </span>
+          </div>
+
+          {/* Teacher Mode Control in Footer */}
+          <div className="flex items-center gap-3">
+            {isTeacherMode ? (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-100 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 text-purple-800 dark:text-purple-300 font-bold text-xs">
+                <Shield className="w-3.5 h-3.5" />
+                <span>👑 Modo Teacher Marcelo Ativo</span>
+                <button
+                  onClick={handleToggleTeacherMode}
+                  className="ml-2 px-2 py-0.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-semibold text-[11px] transition"
+                  title="Alternar para a visualização idêntica à do aluno"
+                >
+                  Ver como Aluno
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsTeacherLoginModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-950/40 text-slate-500 hover:text-purple-700 dark:hover:text-purple-300 font-semibold text-xs transition border border-dashed border-slate-300 dark:border-slate-700"
+              >
+                <Lock className="w-3.5 h-3.5 text-purple-600" />
+                <span>Área do Professor (Teacher Marcelo)</span>
+              </button>
+            )}
           </div>
 
           <div className="text-center md:text-right space-y-1">

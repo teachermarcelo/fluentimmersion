@@ -20,6 +20,8 @@ import { TeacherEmblem } from './TeacherEmblem';
 import { speakText } from '../utils/speech';
 import { sounds } from '../utils/audioEffects';
 import { fireKidsStars } from '../utils/confetti';
+import { InteractiveLessonViewer } from './InteractiveLessonViewer';
+import { getAllAvailableLessons } from '../utils/lessonManager';
 
 interface KidsViewProps {
   onAwardXP: (xp: number) => void;
@@ -304,7 +306,7 @@ export const KidsView: React.FC<KidsViewProps> = ({ onAwardXP, onOpenWhatsApp })
           )}
 
           {/* Kids Interactive Lessons created by Teacher Marcelo */}
-          {ALL_LESSONS.filter((l) => l.targetAudience === 'kids').length > 0 && (
+          {getAllAvailableLessons().filter((l) => l.targetAudience === 'kids').length > 0 && (
             <div className="glass-card rounded-3xl p-6 sm:p-8 space-y-4 border-2 border-amber-300">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -319,7 +321,7 @@ export const KidsView: React.FC<KidsViewProps> = ({ onAwardXP, onOpenWhatsApp })
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {ALL_LESSONS.filter((l) => l.targetAudience === 'kids').map((lesson) => (
+                {getAllAvailableLessons().filter((l) => l.targetAudience === 'kids').map((lesson) => (
                   <div
                     key={lesson.id}
                     className="p-5 rounded-2xl bg-gradient-to-tr from-amber-50 to-pink-50 dark:from-slate-800 dark:to-slate-900 border border-amber-200 dark:border-slate-700 space-y-3"
@@ -338,22 +340,34 @@ export const KidsView: React.FC<KidsViewProps> = ({ onAwardXP, onOpenWhatsApp })
                     </h4>
 
                     {lesson.customHtml && (
-                      <div
-                        className="rounded-xl overflow-hidden p-3 bg-white/70 dark:bg-slate-800/80 border border-amber-200/50"
-                        dangerouslySetInnerHTML={{ __html: lesson.customHtml }}
-                      />
+                      <div className="rounded-xl overflow-hidden">
+                        <InteractiveLessonViewer
+                          htmlContent={lesson.customHtml}
+                          title={lesson.title}
+                          xpReward={lesson.xpReward}
+                          isStudentView={true}
+                          deviceMode="desktop"
+                          onComplete={() => {
+                            sounds.playSuccess();
+                            fireKidsStars();
+                            onAwardXP(lesson.xpReward);
+                          }}
+                        />
+                      </div>
                     )}
 
-                    <button
-                      onClick={() => {
-                        sounds.playSuccess();
-                        fireKidsStars();
-                        onAwardXP(lesson.xpReward);
-                      }}
-                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-pink-500 hover:from-amber-600 hover:to-pink-600 text-white font-black text-xs shadow-md transition"
-                    >
-                      🌟 Concluir Aula e Ganhar Estrelas!
-                    </button>
+                    {!lesson.customHtml && (
+                      <button
+                        onClick={() => {
+                          sounds.playSuccess();
+                          fireKidsStars();
+                          onAwardXP(lesson.xpReward);
+                        }}
+                        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-pink-500 hover:from-amber-600 hover:to-pink-600 text-white font-black text-xs shadow-md transition"
+                      >
+                        🌟 Concluir Aula e Ganhar Estrelas!
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

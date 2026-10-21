@@ -59,17 +59,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Content & Imagery */}
         <div className="relative z-10 p-6 sm:p-10 text-white flex flex-col lg:flex-row items-center justify-between gap-8">
           <div className="max-w-2xl space-y-4">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold uppercase tracking-wider text-amber-300">
-              <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
-              Plataforma Oficial FLUENT IMMERSION • Nível {user.level}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold uppercase tracking-wider text-amber-300">
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                Plataforma Oficial FLUENT IMMERSION • Nível {user.level}
+              </div>
+
+              {((user as any).enrolledTrack || user.role === 'student') && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 backdrop-blur-md border border-emerald-400/30 text-xs font-bold text-emerald-300">
+                  <span>Trilha: {(user as any).enrolledTrack === 'kids' ? '🧸 Fluent Kids' : (user as any).enrolledTrack === 'business' ? '💼 Business' : (user as any).enrolledTrack === 'biblico' ? '📖 Bíblico' : (user as any).enrolledTrack === 'proficiencia' ? '🎯 Proficiência' : (user as any).enrolledTrack === 'all_access' ? '🌟 VIP Acesso Total' : '🎓 Geral (A0-C2)'}</span>
+                </div>
+              )}
             </div>
 
             <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-              Welcome back, <span className="text-rose-400">{user.name.split(' ')[0]}</span>!
+              Welcome{user.xp > 0 ? ' back' : ''}, <span className="text-rose-400">{user.name.split(' ')[0]}</span>!
             </h1>
 
             <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-normal">
-              Imersão ativa na língua e cultura britânica. Pratique hoje sua pronúncia em tempo real com avaliação de IA e feedback pedagógico do <strong>Teacher Marcelo</strong>.
+              {user.xp === 0
+                ? `Olá, ${user.name}! Seu acesso exclusivo foi liberado pelo Teacher Marcelo. Inicie agora sua primeira prática fonética para começar a registrar seu progresso!`
+                : 'Imersão ativa na língua e cultura britânica. Pratique hoje sua pronúncia em tempo real com avaliação de IA e feedback pedagógico do Teacher Marcelo.'}
             </p>
 
             {/* Quick Action Buttons */}
@@ -150,11 +160,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex items-center gap-6">
             <span className="flex items-center gap-1.5 font-medium">
               <Flame className="w-4 h-4 text-amber-400" />
-              Sequência: <strong className="text-white">{user.streak} dias seguidos</strong>
+              Sequência: <strong className="text-white">{user.streak > 1 ? `${user.streak} dias seguidos` : user.xp > 0 ? '1º dia de imersão' : 'Iniciando ofensiva hoje'}</strong>
             </span>
             <span className="flex items-center gap-1.5 font-medium">
               <TrendingUp className="w-4 h-4 text-emerald-400" />
-              Precisão de Fala: <strong className="text-white">{user.accuracyRate}%</strong>
+              Precisão de Fala: <strong className="text-white">{user.accuracyRate > 0 ? `${user.accuracyRate}%` : 'Aguardando 1º áudio'}</strong>
             </span>
           </div>
 

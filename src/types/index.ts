@@ -20,6 +20,8 @@ export interface UserProfile {
   badges: Badge[];
   role: 'student' | 'teacher' | 'admin' | 'parent';
   avatar: string;
+  enrolledTrack?: 'curriculum_adults' | 'kids' | 'business' | 'biblico' | 'proficiencia' | 'all_access';
+  isEnrolledStudent?: boolean;
 }
 
 export interface Badge {
@@ -106,7 +108,7 @@ export interface StudentAcademicRecord {
   notes: string;
   parentEmail?: string;
   phone?: string;
-  track?: 'curriculum_adults' | 'kids' | 'business' | 'biblico' | 'proficiencia';
+  track?: 'curriculum_adults' | 'kids' | 'business' | 'biblico' | 'proficiencia' | 'all_access';
 }
 
 export interface NotificationItem {

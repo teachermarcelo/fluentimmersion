@@ -20,6 +20,8 @@ import { ALL_LESSONS } from '../data/mockData';
 import { speakText } from '../utils/speech';
 import { sounds } from '../utils/audioEffects';
 import { fireCelebrationConfetti } from '../utils/confetti';
+import { InteractiveLessonViewer } from './InteractiveLessonViewer';
+import { getAllAvailableLessons } from '../utils/lessonManager';
 
 interface CurriculumViewProps {
   currentLevel: CEFRLevel;
@@ -45,7 +47,8 @@ export const CurriculumView: React.FC<CurriculumViewProps> = ({
   const [translatedWord, setTranslatedWord] = useState<{ word: string; translation: string; note?: string } | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
 
-  const filteredLessons = ALL_LESSONS
+  const allLessons = getAllAvailableLessons();
+  const filteredLessons = allLessons
     .filter((l) => {
       const levelMatch = l.level === currentLevel;
       const skillMatch = selectedSkill === 'all' || l.skill === selectedSkill;
@@ -284,197 +287,216 @@ export const CurriculumView: React.FC<CurriculumViewProps> = ({
             </button>
           </div>
 
-          {/* Reading Lesson Content with Interactive Click-to-Translate */}
-          {activeLesson.content.readingText && (
+          {/* If the lesson has customHtml (Interactive Web App, React Artifact, or Standalone HTML) */}
+          {activeLesson.customHtml ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs text-slate-500">
-                <span className="font-semibold flex items-center gap-1">
-                  <Languages className="w-4 h-4 text-emerald-500" />
-                  Dica: Toque em qualquer palavra para tradução neural e pronúncia imediata!
-                </span>
-              </div>
-
-              <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 leading-relaxed text-base sm:text-lg text-slate-800 dark:text-slate-100 font-medium">
-                {activeLesson.content.readingText.split(' ').map((word, idx) => (
-                  <span
-                    key={idx}
-                    onClick={() => handleTranslateWord(word)}
-                    className="inline-block cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-950/60 hover:text-rose-600 rounded px-1 transition duration-150 mr-1"
-                  >
-                    {word}
-                  </span>
-                ))}
-              </div>
-
-              {/* Translation popup bubble */}
-              {translatedWord && (
-                <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 flex items-center justify-between gap-4 animate-fade-in">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-emerald-900 dark:text-emerald-200 text-sm">
-                        "{translatedWord.word}"
-                      </span>
-                      <span className="text-xs text-emerald-700 dark:text-emerald-400">
-                        ➜ {translatedWord.translation}
-                      </span>
-                    </div>
-                    {translatedWord.note && (
-                      <p className="text-xs text-emerald-800 dark:text-emerald-300">
-                        {translatedWord.note}
-                      </p>
-                    )}
+              <InteractiveLessonViewer
+                htmlContent={activeLesson.customHtml}
+                title={activeLesson.title}
+                xpReward={activeLesson.xpReward}
+                isStudentView={true}
+                onComplete={() => {
+                  onAwardXP(activeLesson.xpReward);
+                  sounds.playSuccess();
+                  fireCelebrationConfetti();
+                }}
+              />
+            </div>
+          ) : (
+            <>
+              {/* Reading Lesson Content with Interactive Click-to-Translate */}
+              {activeLesson.content.readingText && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <span className="font-semibold flex items-center gap-1">
+                      <Languages className="w-4 h-4 text-emerald-500" />
+                      Dica: Toque em qualquer palavra para tradução neural e pronúncia imediata!
+                    </span>
                   </div>
 
-                  <button
-                    onClick={() => speakText(translatedWord.word, { lang: 'en-GB' })}
-                    className="p-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-xs"
-                    title="Ouvir pronúncia britânica"
-                  >
-                    <Volume2 className="w-4 h-4" />
-                  </button>
+                  <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 leading-relaxed text-base sm:text-lg text-slate-800 dark:text-slate-100 font-medium">
+                    {activeLesson.content.readingText.split(' ').map((word, idx) => (
+                      <span
+                        key={idx}
+                        onClick={() => handleTranslateWord(word)}
+                        className="inline-block cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-950/60 hover:text-rose-600 rounded px-1 transition duration-150 mr-1"
+                      >
+                        {word}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Translation popup bubble */}
+                  {translatedWord && (
+                    <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 flex items-center justify-between gap-4 animate-fade-in">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-emerald-900 dark:text-emerald-200 text-sm">
+                            "{translatedWord.word}"
+                          </span>
+                          <span className="text-xs text-emerald-700 dark:text-emerald-400">
+                            ➜ {translatedWord.translation}
+                          </span>
+                        </div>
+                        {translatedWord.note && (
+                          <p className="text-xs text-emerald-800 dark:text-emerald-300">
+                            {translatedWord.note}
+                          </p>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => speakText(translatedWord.word, { lang: 'en-GB' })}
+                        className="p-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-xs"
+                        title="Ouvir pronúncia britânica"
+                      >
+                        <Volume2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          {/* Writing Coach Lesson */}
-          {activeLesson.content.writingPrompt && (
-            <div className="space-y-4">
-              <div className="p-5 rounded-2xl bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800/40 space-y-2">
-                <span className="text-xs font-bold uppercase text-purple-700 dark:text-purple-300 flex items-center gap-1.5">
-                  <PenTool className="w-3.5 h-3.5" />
-                  Desafio de Redação & Gramática (Teacher Marcelo)
-                </span>
-                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                  {activeLesson.content.writingPrompt}
-                </p>
-              </div>
-
-              <div>
-                <textarea
-                  rows={5}
-                  value={writingInput}
-                  onChange={(e) => setWritingInput(e.target.value)}
-                  placeholder="Escreva sua resposta em inglês aqui..."
-                  className="w-full p-4 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                />
-              </div>
-
-              <button
-                onClick={handleEvaluateWriting}
-                disabled={isSubmittingWriting || !writingInput.trim()}
-                className="px-6 py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm shadow-md flex items-center gap-2 transition disabled:opacity-50"
-              >
-                <Sparkles className="w-4 h-4 text-amber-300" />
-                {isSubmittingWriting ? 'Analisando Gramática com IA...' : 'Enviar para Correção com IA'}
-              </button>
-
-              {writingAnalysis && (
-                <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 animate-fade-in">
-                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-                    <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                      Pontuação Geral: <strong className="text-purple-600 text-xl">{writingAnalysis.overallScore}/100</strong>
+              {/* Writing Coach Lesson */}
+              {activeLesson.content.writingPrompt && (
+                <div className="space-y-4">
+                  <div className="p-5 rounded-2xl bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800/40 space-y-2">
+                    <span className="text-xs font-bold uppercase text-purple-700 dark:text-purple-300 flex items-center gap-1.5">
+                      <PenTool className="w-3.5 h-3.5" />
+                      Desafio de Redação & Gramática (Teacher Marcelo)
                     </span>
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-bold">
-                      CEFR {currentLevel}
-                    </span>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Feedback do Professor:
-                    </span>
-                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                      {writingAnalysis.feedback}
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                      {activeLesson.content.writingPrompt}
                     </p>
                   </div>
 
-                  {writingAnalysis.correctedText && (
-                    <div className="space-y-1 bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700">
-                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                        Versão Polida Recomendada:
-                      </span>
-                      <p className="text-xs font-medium text-slate-800 dark:text-slate-200">
-                        {writingAnalysis.correctedText}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Multiple Choice Quiz */}
-          {activeLesson.content.multipleChoice && (
-            <div className="space-y-6 pt-4 border-t border-slate-200 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                Questões de Fixação e Compreensão:
-              </h3>
-
-              {activeLesson.content.multipleChoice.map((q, qIdx) => (
-                <div key={qIdx} className="space-y-3">
-                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    {qIdx + 1}. {q.question}
-                  </p>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {q.options.map((opt, optIdx) => {
-                      const isSelected = quizAnswers[qIdx] === optIdx;
-                      const isCorrect = optIdx === q.correctIndex;
-
-                      let btnStyle = 'bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700';
-                      if (quizSubmitted) {
-                        if (isCorrect) {
-                          btnStyle = 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border-emerald-400 font-bold';
-                        } else if (isSelected && !isCorrect) {
-                          btnStyle = 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-200 border-rose-400';
-                        }
-                      } else if (isSelected) {
-                        btnStyle = 'bg-rose-600 text-white font-bold border-rose-600';
-                      }
-
-                      return (
-                        <button
-                          key={optIdx}
-                          disabled={quizSubmitted}
-                          onClick={() => setQuizAnswers({ ...quizAnswers, [qIdx]: optIdx })}
-                          className={`p-3.5 rounded-xl border text-left text-xs transition ${btnStyle}`}
-                        >
-                          {opt}
-                        </button>
-                      );
-                    })}
+                  <div>
+                    <textarea
+                      rows={5}
+                      value={writingInput}
+                      onChange={(e) => setWritingInput(e.target.value)}
+                      placeholder="Escreva sua resposta em inglês aqui..."
+                      className="w-full p-4 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                    />
                   </div>
 
-                  {quizSubmitted && (
-                    <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-xs text-slate-600 dark:text-slate-400">
-                      <strong>Explicação:</strong> {q.explanation}
+                  <button
+                    onClick={handleEvaluateWriting}
+                    disabled={isSubmittingWriting || !writingInput.trim()}
+                    className="px-6 py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm shadow-md flex items-center gap-2 transition disabled:opacity-50"
+                  >
+                    <Sparkles className="w-4 h-4 text-amber-300" />
+                    {isSubmittingWriting ? 'Analisando Gramática com IA...' : 'Enviar para Correção com IA'}
+                  </button>
+
+                  {writingAnalysis && (
+                    <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 animate-fade-in">
+                      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                        <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                          Pontuação Geral: <strong className="text-purple-600 text-xl">{writingAnalysis.overallScore}/100</strong>
+                        </span>
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-bold">
+                          CEFR {currentLevel}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                          Feedback do Professor:
+                        </span>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                          {writingAnalysis.feedback}
+                        </p>
+                      </div>
+
+                      {writingAnalysis.correctedText && (
+                        <div className="space-y-1 bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                            Versão Polida Recomendada:
+                          </span>
+                          <p className="text-xs font-medium text-slate-800 dark:text-slate-200">
+                            {writingAnalysis.correctedText}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              ))}
+              )}
 
-              {!quizSubmitted ? (
-                <button
-                  onClick={handleCompleteQuiz}
-                  className="px-6 py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-md"
-                >
-                  Conferir Respostas e Ganhar +{activeLesson.xpReward} XP
-                </button>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-emerald-600 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4" /> Lição Concluída com Sucesso!
-                  </span>
-                  <button
-                    onClick={() => setActiveLesson(null)}
-                    className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 text-xs font-bold"
-                  >
-                    Próxima Lição
-                  </button>
+              {/* Multiple Choice Quiz */}
+              {activeLesson.content.multipleChoice && (
+                <div className="space-y-6 pt-4 border-t border-slate-200 dark:border-slate-800">
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                    Questões de Fixação e Compreensão:
+                  </h3>
+
+                  {activeLesson.content.multipleChoice.map((q, qIdx) => (
+                    <div key={qIdx} className="space-y-3">
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                        {qIdx + 1}. {q.question}
+                      </p>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {q.options.map((opt, optIdx) => {
+                          const isSelected = quizAnswers[qIdx] === optIdx;
+                          const isCorrect = optIdx === q.correctIndex;
+
+                          let btnStyle = 'bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700';
+                          if (quizSubmitted) {
+                            if (isCorrect) {
+                              btnStyle = 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border-emerald-400 font-bold';
+                            } else if (isSelected && !isCorrect) {
+                              btnStyle = 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-200 border-rose-400';
+                            }
+                          } else if (isSelected) {
+                            btnStyle = 'bg-rose-600 text-white font-bold border-rose-600';
+                          }
+
+                          return (
+                            <button
+                              key={optIdx}
+                              disabled={quizSubmitted}
+                              onClick={() => setQuizAnswers({ ...quizAnswers, [qIdx]: optIdx })}
+                              className={`p-3.5 rounded-xl border text-left text-xs transition ${btnStyle}`}
+                            >
+                              {opt}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {quizSubmitted && (
+                        <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-xs text-slate-600 dark:text-slate-400">
+                          <strong>Explicação:</strong> {q.explanation}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {!quizSubmitted ? (
+                    <button
+                      onClick={handleCompleteQuiz}
+                      className="px-6 py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-md"
+                    >
+                      Conferir Respostas e Ganhar +{activeLesson.xpReward} XP
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-bold text-emerald-600 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4" /> Lição Concluída com Sucesso!
+                      </span>
+                      <button
+                        onClick={() => setActiveLesson(null)}
+                        className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 text-xs font-bold"
+                      >
+                        Próxima Lição
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
       ) : (

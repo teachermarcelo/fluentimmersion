@@ -81,6 +81,19 @@ export const syncStudentToSupabase = async (student: StudentAcademicRecord) => {
   }
 };
 
+export const deleteStudentFromSupabase = async (studentId: string) => {
+  const supabase = getSupabaseClient();
+  if (!supabase) return { success: false, message: 'Supabase não conectado' };
+  try {
+    const { error } = await supabase.from('students').delete().eq('id', studentId);
+    if (error) throw error;
+    return { success: true };
+  } catch (err: any) {
+    console.warn('Erro ao excluir aluno no Supabase:', err);
+    return { success: false, error: err.message };
+  }
+};
+
 export const fetchStudentsFromSupabase = async (): Promise<StudentAcademicRecord[] | null> => {
   const supabase = getSupabaseClient();
   if (!supabase) return null;

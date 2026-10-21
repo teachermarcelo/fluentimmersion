@@ -54,6 +54,18 @@ import {
   clearSupabaseCredentials,
   syncStudentToSupabase,
 } from '../lib/supabase';
+import { InteractiveLessonViewer } from './InteractiveLessonViewer';
+import { generateLessonWithAiOrFallback } from '../utils/lessonGenerator';
+import {
+  parseImportedLessonCode,
+  getAllAvailableLessons,
+  saveCustomLesson,
+  deleteCustomLesson,
+} from '../utils/lessonManager';
+import {
+  getTeacherStudentsRoster,
+  deleteStudentPermanently,
+} from '../utils/studentManager';
 
 interface AdminViewProps {
   onAddCustomLesson: (lesson: Lesson) => void;
@@ -242,12 +254,18 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
   const [aiTopicInput, setAiTopicInput] = useState('');
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [aiGenSuccess, setAiGenSuccess] = useState(false);
+  const [aiGeneratorSourceMsg, setAiGeneratorSourceMsg] = useState('');
+
+  // Import Code / Artifact Modal State
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importRawCode, setImportRawCode] = useState('');
+  const [importStatusMsg, setImportStatusMsg] = useState('');
 
   // Live preview screen mode (Desktop vs Mobile Phone)
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
 
   // Sequence Manager state
-  const [managedLessons, setManagedLessons] = useState<Lesson[]>(ALL_LESSONS);
+  const [managedLessons, setManagedLessons] = useState<Lesson[]>(() => getAllAvailableLessons());
   const [sequenceFilter, setSequenceFilter] = useState<'all' | 'curriculum_adults' | 'kids' | 'business' | 'biblico' | 'proficiencia'>('all');
 
   // Supabase State & Config
@@ -261,17 +279,12 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
   const [copiedSql, setCopiedSql] = useState(false);
 
   const [students, setStudents] = useState<StudentAcademicRecord[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('fluent_immersion_students');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {}
-      }
-    }
-    return STUDENT_ACADEMIC_RECORDS;
+    return getTeacherStudentsRoster();
   });
-  const [selectedStudentForReport, setSelectedStudentForReport] = useState<StudentAcademicRecord>(STUDENT_ACADEMIC_RECORDS[0]);
+  const [selectedStudentForReport, setSelectedStudentForReport] = useState<StudentAcademicRecord>(() => {
+    const list = getTeacherStudentsRoster();
+    return list[0] || STUDENT_ACADEMIC_RECORDS[0];
+  });
 
   // Register Student Modal & Form State
   const [isRegisterStudentModalOpen, setIsRegisterStudentModalOpen] = useState(false);
@@ -279,7 +292,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
   const [newStudentEmail, setNewStudentEmail] = useState('');
   const [newStudentPhone, setNewStudentPhone] = useState('');
   const [newStudentLevel, setNewStudentLevel] = useState<CEFRLevel>('A1');
-  const [newStudentTrack, setNewStudentTrack] = useState<'curriculum_adults' | 'kids' | 'business' | 'biblico' | 'proficiencia'>('curriculum_adults');
+  const [newStudentTrack, setNewStudentTrack] = useState<'curriculum_adults' | 'kids' | 'business' | 'biblico' | 'proficiencia' | 'all_access'>('curriculum_adults');
   const [newStudentParentEmail, setNewStudentParentEmail] = useState('');
   const [newStudentNotes, setNewStudentNotes] = useState('');
 
@@ -302,13 +315,13 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
       phone: newStudentPhone.trim(),
       level: newStudentLevel,
       track: newStudentTrack,
-      totalXp: 120,
-      speakingScore: 82,
-      listeningScore: 86,
-      readingScore: 84,
-      writingScore: 78,
+      totalXp: 0, // Inicia 100% zerado
+      speakingScore: 0, // Aguardando 1º áudio
+      listeningScore: 0,
+      readingScore: 0,
+      writingScore: 0,
       attendanceRate: 100,
-      lastActive: 'Cadastrado agora',
+      lastActive: 'Aguardando 1º acesso',
       notes: newStudentNotes.trim() || `Matriculado na trilha ${newStudentTrack} pelo Teacher Marcelo.`,
       parentEmail: newStudentParentEmail.trim(),
     };
@@ -342,13 +355,11 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
     setIsShareModalOpen(true);
   };
 
-  const handleDeleteStudent = (id: string, name: string) => {
+  const handleDeleteStudent = async (id: string, name: string) => {
     if (confirm(`Deseja realmente remover a matrícula do aluno ${name}?`)) {
-      const updated = students.filter((s) => s.id !== id);
+      await deleteStudentPermanently(id, name);
+      const updated = getTeacherStudentsRoster();
       setStudents(updated);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('fluent_immersion_students', JSON.stringify(updated));
-      }
       sounds.playPop();
     }
   };
@@ -380,6 +391,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
       business: 'Business English Corporativo',
       biblico: 'Inglês Bíblico & Teológico',
       proficiencia: 'Preparatório Proficiência (IELTS/TOEFL)',
+      all_access: 'Acesso Total VIP (Todas as Trilhas Liberadas)',
     };
     const trackLabel = (st.track && trackNames[st.track]) || 'Grade Curricular Completa';
 
@@ -524,50 +536,70 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
     setAiGenSuccess(false);
 
     try {
-      const res = await fetch('/api/generate-lesson', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          topic: aiTopicInput.trim(),
-          level: lessonLevel,
-          category: lessonCategory,
-          targetAudience: targetAudience,
-          skill: lessonSkill,
-        }),
+      const generated = await generateLessonWithAiOrFallback({
+        topic: aiTopicInput.trim(),
+        level: lessonLevel,
+        category: lessonCategory,
+        targetAudience: targetAudience,
+        skill: lessonSkill,
       });
 
-      if (!res.ok) throw new Error('Falha ao gerar');
-      const data = await res.json();
+      if (generated.title) setLessonTitle(generated.title);
+      if (generated.htmlContent) setHtmlContent(generated.htmlContent);
+      if (generated.xpReward) setLessonXp(generated.xpReward);
+      if (generated.durationMinutes) setLessonDuration(generated.durationMinutes);
 
-      if (data.title) setLessonTitle(data.title);
-      if (data.htmlContent) setHtmlContent(data.htmlContent);
-      if (data.xpReward) setLessonXp(data.xpReward);
-      if (data.durationMinutes) setLessonDuration(data.durationMinutes);
+      setAiGeneratorSourceMsg(
+        generated.source === 'gemini'
+          ? '✨ Lição gerada com sucesso pela Inteligência Artificial Gemini!'
+          : '🇬🇧 Lição gerada com sucesso pelo Motor Pedagógico Britânico de Imersão!'
+      );
 
       sounds.playSuccess();
       fireCelebrationConfetti();
       setAiGenSuccess(true);
-      setTimeout(() => setAiGenSuccess(false), 5000);
+      setTimeout(() => setAiGenSuccess(false), 7000);
     } catch (e) {
-      console.warn('Erro ao chamar API de lição:', e);
-      // Fallback generator
-      setLessonTitle(`${aiTopicInput} - Masterclass`);
-      setHtmlContent(`<div style="font-family: system-ui, sans-serif; padding: 22px; background: linear-gradient(135deg, #0b1b3d, #1e3a8a); color: white; border-radius: 18px;">
-  <h2 style="color: #f59e0b; margin-top: 0;">🇬🇧 ${aiTopicInput}</h2>
-  <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6;">Lição estruturada para ${targetAudience === 'kids' ? 'Fluent Kids' : 'nível ' + lessonLevel}.</p>
-  <div style="background: rgba(255,255,255,0.08); border-left: 4px solid #c8102e; padding: 12px; margin: 14px 0; border-radius: 8px;">
-    <strong>Frase Prática:</strong> <em>"Mastering ${aiTopicInput} requires regular immersion."</em>
-  </div>
-</div>`);
-      sounds.playPop();
+      console.warn('Erro ao gerar lição:', e);
+      sounds.playRetry();
     } finally {
       setIsGeneratingAi(false);
     }
   };
 
+  // Import raw HTML / standalone React artifact code handler
+  const handleImportRawCode = () => {
+    if (!importRawCode.trim()) {
+      alert('Por favor, cole o código da lição (HTML, React Artifact ou CSS/JS).');
+      return;
+    }
+
+    const parsed = parseImportedLessonCode(importRawCode);
+    setLessonTitle(parsed.detectedTitle);
+    setLessonLevel(parsed.detectedLevel);
+    setLessonSkill(parsed.detectedSkill);
+    setLessonDuration(parsed.detectedDuration);
+    setLessonXp(parsed.detectedXp);
+    setHtmlContent(importRawCode);
+
+    setImportStatusMsg(
+      `✅ Código importado com sucesso! Título: "${parsed.detectedTitle}" • Nível: ${parsed.detectedLevel} • Duração: ${parsed.detectedDuration} min • ${parsed.isArtifact ? 'Artifact Interativo Detectado' : 'HTML Padrão'}.`
+    );
+
+    sounds.playSuccess();
+    fireCelebrationConfetti();
+    setTimeout(() => {
+      setIsImportModalOpen(false);
+      setImportStatusMsg('');
+    }, 2200);
+  };
+
   // Save lesson
   const handleSaveLesson = () => {
-    if (!lessonTitle.trim() || !htmlContent.trim()) return;
+    if (!lessonTitle.trim() || !htmlContent.trim()) {
+      alert('Informe o título e o código da lição antes de salvar.');
+      return;
+    }
 
     const newLesson: Lesson = {
       id: `custom-les-${Date.now()}`,
@@ -579,20 +611,22 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
       orderIndex: lessonOrderIndex,
       durationMinutes: lessonDuration,
       xpReward: lessonXp,
-      description: `Lição da trilha [${targetAudience === 'kids' ? 'KIDS' : lessonCategory.toUpperCase()}] criada pelo Teacher Marcelo.`,
+      description: `Lição interativa da trilha [${targetAudience === 'kids' ? 'KIDS' : lessonCategory.toUpperCase()}] criada pelo Teacher Marcelo.`,
       iconName: targetAudience === 'kids' ? 'Sparkles' : 'Code',
       content: {
-        readingText: 'Lição interativa com visualizador HTML oficial.',
+        readingText: 'Lição interativa oficial executada no visualizador da Fluent Immersion.',
       },
       customHtml: htmlContent,
     };
 
+    saveCustomLesson(newLesson);
     onAddCustomLesson(newLesson);
-    setManagedLessons([newLesson, ...managedLessons]);
+    const updated = getAllAvailableLessons();
+    setManagedLessons(updated);
     sounds.playSuccess();
     fireCelebrationConfetti();
     alert(
-      `Lição "${lessonTitle}" publicada com sucesso na seção [${
+      `Lição "${lessonTitle}" publicada com sucesso na trilha [${
         targetAudience === 'kids' ? 'Fluent Kids' : lessonCategory.toUpperCase()
       }] na posição #${lessonOrderIndex}!`
     );
@@ -1110,9 +1144,9 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
             </div>
 
             {aiGenSuccess && (
-              <div className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-400 text-emerald-200 text-xs font-bold flex items-center gap-2">
+              <div className="p-3 rounded-xl bg-emerald-500/20 border border-emerald-400 text-emerald-200 text-xs font-bold flex items-center gap-2 animate-fade-in">
                 <Check className="w-4 h-4 text-emerald-300" />
-                Lição gerada com sucesso pela IA e carregada no Editor HTML abaixo!
+                {aiGeneratorSourceMsg || 'Lição gerada com sucesso e carregada no Editor HTML abaixo!'}
               </div>
             )}
           </div>
@@ -1121,14 +1155,27 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* HTML Code Editor */}
             <div className="glass-card rounded-3xl p-6 sm:p-8 space-y-5">
-              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 gap-2">
                 <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                   <Code className="w-4 h-4 text-purple-600" />
                   Editor de Conteúdo & Parâmetros Pedagógicos
                 </h2>
-                <span className="text-xs text-purple-600 font-bold bg-purple-50 dark:bg-purple-950 px-2.5 py-1 rounded-full">
-                  Passo 2 de 3
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playPop();
+                      setIsImportModalOpen(true);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md flex items-center gap-1.5 transition active:scale-95"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Importar Artifact / Código
+                  </button>
+                  <span className="text-xs text-purple-600 font-bold bg-purple-50 dark:bg-purple-950 px-2.5 py-1 rounded-full">
+                    Passo 2 de 3
+                  </span>
+                </div>
               </div>
 
               {/* Título e Ordem */}
@@ -1378,35 +1425,20 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
                 </div>
               </div>
 
-              {/* Preview container */}
-              <div className="flex justify-center bg-slate-100 dark:bg-slate-950/60 p-4 rounded-2xl min-h-[440px]">
-                <div
-                  className={`transition-all duration-300 overflow-y-auto ${
-                    previewDevice === 'mobile'
-                      ? 'w-[360px] max-w-full rounded-[32px] p-4 bg-white dark:bg-slate-900 border-4 border-slate-800 dark:border-slate-700 shadow-2xl space-y-3'
-                      : 'w-full p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm'
-                  }`}
-                >
-                  {previewDevice === 'mobile' && (
-                    <div className="w-20 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-2"></div>
-                  )}
-
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800 text-[11px] text-slate-500">
-                    <span className="font-bold text-purple-600">
-                      {targetAudience === 'kids' ? '🧸 Modo Kids' : '🇬🇧 Grade Regular'}
-                    </span>
-                    <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full font-mono font-bold">
-                      Aula #{lessonOrderIndex}
-                    </span>
-                  </div>
-
-                  <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
-                </div>
+              {/* Interactive Preview Container with Full Script / Audio / CSS Isolation */}
+              <div className="flex flex-col gap-3">
+                <InteractiveLessonViewer
+                  htmlContent={htmlContent}
+                  title={lessonTitle}
+                  xpReward={lessonXp}
+                  deviceMode={previewDevice}
+                  isStudentView={false}
+                  className="w-full"
+                />
+                <p className="text-xs text-slate-500 text-center">
+                  O aluno terá exatamente esta experiência interativa ao abrir a aula pelo computador ou smartphone. Todos os áudios TTS nativos, flashcards, scripts e quizzes funcionam em tempo real!
+                </p>
               </div>
-
-              <p className="text-xs text-slate-500 text-center">
-                O aluno terá exatamente esta experiência interativa ao abrir a aula pelo computador ou smartphone.
-              </p>
             </div>
           </div>
         </div>
@@ -1773,6 +1805,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
                           {st.track === 'business' && '💼 Business English'}
                           {st.track === 'biblico' && '📖 Inglês Bíblico'}
                           {st.track === 'proficiencia' && '🏆 Proficiência'}
+                          {st.track === 'all_access' && '🌟 VIP Acesso Total'}
                           {(!st.track || st.track === 'curriculum_adults') && '🎓 Adultos Geral (A0-C2)'}
                         </span>
                       </td>
@@ -1939,6 +1972,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
                         <option value="business">💼 Business English Corporativo</option>
                         <option value="biblico">📖 Inglês Bíblico & Teológico</option>
                         <option value="proficiencia">🏆 Preparatório Proficiência</option>
+                        <option value="all_access">🌟 Acesso VIP Total (Todas as Trilhas Liberadas)</option>
                       </select>
                     </div>
                   </div>
@@ -2330,6 +2364,137 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
             >
               Restaurar Senha Padrão
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: IMPORTAR CÓDIGO / REACT ARTIFACT DE LIÇÃO COMPLETA */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => {
+                setIsImportModalOpen(false);
+                setImportStatusMsg('');
+              }}
+              className="absolute top-6 right-6 p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center text-xl shadow-lg shrink-0">
+                <Code className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-900 dark:text-slate-100">
+                  Importar Código de Lição Completa
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Cole código HTML standalone, React Artifacts (como a Lição de Datas), Web Apps ou scripts de TTS.
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Helper Buttons to test with preloaded Artifacts */}
+            <div className="p-3 bg-purple-50 dark:bg-purple-950/40 rounded-2xl border border-purple-200 dark:border-purple-800 flex items-center justify-between gap-3 flex-wrap">
+              <div className="text-xs text-purple-900 dark:text-purple-200">
+                <strong>💡 Exemplos Prontos:</strong> Teste o importador com os artefatos enviados:
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch('/lessons/lesson-fruits-a0.html');
+                      if (res.ok) {
+                        const text = await res.text();
+                        setImportRawCode(text);
+                        sounds.playPop();
+                      } else {
+                        alert('Não foi possível carregar o arquivo pré-carregado. Cole o código diretamente abaixo.');
+                      }
+                    } catch (e) {
+                      alert('Cole o código diretamente na caixa abaixo.');
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1"
+                >
+                  🍎 Carregar Aula A0 (Fruits & Market)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch('/lessons/lesson-13-dates-birthdays.html');
+                      if (res.ok) {
+                        const text = await res.text();
+                        setImportRawCode(text);
+                        sounds.playPop();
+                      } else {
+                        alert('Não foi possível carregar o arquivo pré-carregado. Cole o código diretamente abaixo.');
+                      }
+                    } catch (e) {
+                      alert('Cole o código diretamente na caixa abaixo.');
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1"
+                >
+                  📅 Carregar Aula 13 (Dates & Birthdays)
+                </button>
+              </div>
+            </div>
+
+            {/* Raw Code Textarea */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Código da Lição (HTML, React, Javascript, CSS):
+                </label>
+                <span className="text-[11px] text-slate-400 font-mono">
+                  {importRawCode.length > 0 ? `${(importRawCode.length / 1024).toFixed(1)} KB colados` : 'Vazio'}
+                </span>
+              </div>
+              <textarea
+                rows={10}
+                value={importRawCode}
+                onChange={(e) => setImportRawCode(e.target.value)}
+                placeholder="Cole o código aqui: <!DOCTYPE html><html>...<script type='module'>..."
+                className="w-full p-4 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-950 text-emerald-400 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            {/* Feedback message */}
+            {importStatusMsg && (
+              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-2">
+                <Check className="w-4 h-4 shrink-0" />
+                <span>{importStatusMsg}</span>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <button
+                type="button"
+                onClick={handleImportRawCode}
+                className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-[#0b1b3d] hover:opacity-95 text-white font-black text-xs sm:text-sm shadow-xl flex items-center justify-center gap-2 transition"
+              >
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                Importar e Carregar no Editor
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsImportModalOpen(false);
+                  setImportStatusMsg('');
+                }}
+                className="px-5 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold transition"
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
         </div>
       )}

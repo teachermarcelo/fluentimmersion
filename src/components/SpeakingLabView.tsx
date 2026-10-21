@@ -30,7 +30,7 @@ import { fireCelebrationConfetti } from '../utils/confetti';
 interface SpeakingLabViewProps {
   currentLevel: CEFRLevel;
   onLevelChange: (level: CEFRLevel) => void;
-  onAwardXP: (xp: number) => void;
+  onAwardXP: (xp: number, speechScore?: number) => void;
   onOpenWhatsApp: () => void;
 }
 
@@ -155,12 +155,13 @@ export const SpeakingLabView: React.FC<SpeakingLabViewProps> = ({
       if (data.score >= 85) {
         sounds.playSuccess();
         fireCelebrationConfetti();
-        onAwardXP(50);
+        onAwardXP(50, data.score);
       } else if (data.score >= 60) {
         sounds.playCoin();
-        onAwardXP(25);
+        onAwardXP(25, data.score);
       } else {
         sounds.playRetry();
+        onAwardXP(10, data.score);
       }
     } catch (err) {
       // Graceful offline fallback
@@ -182,9 +183,10 @@ export const SpeakingLabView: React.FC<SpeakingLabViewProps> = ({
       if (offlineResult.score >= 80) {
         sounds.playSuccess();
         fireCelebrationConfetti();
-        onAwardXP(40);
+        onAwardXP(40, offlineResult.score);
       } else {
         sounds.playRetry();
+        onAwardXP(15, offlineResult.score);
       }
     } finally {
       setIsAnalyzing(false);
