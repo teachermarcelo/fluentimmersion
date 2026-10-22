@@ -331,6 +331,8 @@ export const CurriculumView: React.FC<CurriculumViewProps> = ({
                 title={activeLesson.title}
                 xpReward={activeLesson.xpReward}
                 isStudentView={true}
+                defaultFullscreen={true}
+                onClose={() => setActiveLesson(null)}
                 onComplete={() => {
                   onAwardXP(activeLesson.xpReward);
                   sounds.playSuccess();

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Maximize2, Minimize2, RotateCcw, Award, CheckCircle2, Volume2, Sparkles, AlertCircle } from 'lucide-react';
+import { Maximize2, Minimize2, RotateCcw, Award, CheckCircle2, Volume2, Sparkles, AlertCircle, ArrowLeft } from 'lucide-react';
 import { sounds } from '../utils/audioEffects';
 import { fireCelebrationConfetti } from '../utils/confetti';
 
@@ -12,6 +12,8 @@ interface InteractiveLessonViewerProps {
   isStudentView?: boolean;
   deviceMode?: 'desktop' | 'mobile';
   className?: string;
+  defaultFullscreen?: boolean;
+  onClose?: () => void;
 }
 
 export const InteractiveLessonViewer: React.FC<InteractiveLessonViewerProps> = ({
@@ -23,8 +25,10 @@ export const InteractiveLessonViewer: React.FC<InteractiveLessonViewerProps> = (
   isStudentView = true,
   deviceMode = 'desktop',
   className = '',
+  defaultFullscreen = false,
+  onClose,
 }) => {
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(defaultFullscreen);
   const [iframeKey, setIframeKey] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -107,35 +111,53 @@ export const InteractiveLessonViewer: React.FC<InteractiveLessonViewerProps> = (
   // Close fullscreen on ESC
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isFullscreen) {
-        setIsFullscreen(false);
+      if (e.key === 'Escape') {
+        if (onClose) onClose();
+        else if (isFullscreen) setIsFullscreen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isFullscreen]);
+  }, [isFullscreen, onClose]);
 
   return (
     <div
       ref={containerRef}
       className={`relative flex flex-col transition-all duration-300 ${
         isFullscreen
-          ? 'fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md p-2 sm:p-6 flex flex-col'
+          ? 'fixed inset-0 z-50 bg-slate-950 w-screen h-screen flex flex-col p-0 overflow-hidden'
           : `w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm ${className}`
       }`}
     >
       {/* Top Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-slate-100 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-700/80 text-xs shrink-0 gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-          <span className="font-bold text-slate-800 dark:text-slate-100 truncate">
-            {title || 'Atividade Interativa'}
-          </span>
-          {isCompleteDocument && (
-            <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-bold text-[10px] shrink-0">
-              ⚡ Web App / Artifact Ativo
-            </span>
+      <div className="flex items-center justify-between px-3 sm:px-5 py-2.5 bg-slate-900 border-b border-slate-800 text-xs shrink-0 gap-2 text-slate-100 shadow-sm">
+        <div className="flex items-center gap-2.5 min-w-0">
+          {onClose && (
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playPop();
+                onClose();
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-600 text-white font-extrabold text-xs transition border border-slate-700 shrink-0"
+              title="Voltar às Lições (ESC)"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Voltar</span>
+            </button>
           )}
+
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+            <span className="font-extrabold text-white truncate max-w-xs sm:max-w-md lg:max-w-lg">
+              {title || 'Atividade Interativa'}
+            </span>
+            {isCompleteDocument && (
+              <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-purple-900/60 text-purple-300 border border-purple-700 font-bold text-[10px] shrink-0">
+                ⚡ Web App Ativo
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
@@ -143,7 +165,7 @@ export const InteractiveLessonViewer: React.FC<InteractiveLessonViewerProps> = (
             type="button"
             onClick={handleRestart}
             title="Recarregar Lição"
-            className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+            className="p-1.5 rounded-lg text-slate-300 hover:bg-slate-800 transition"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
@@ -151,18 +173,18 @@ export const InteractiveLessonViewer: React.FC<InteractiveLessonViewerProps> = (
           <button
             type="button"
             onClick={toggleFullscreen}
-            title={isFullscreen ? 'Sair da Tela Cheia (ESC)' : 'Expandir em Tela Cheia'}
-            className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition flex items-center gap-1 font-semibold text-[11px]"
+            title={isFullscreen ? 'Reduzir para modo janela (ESC)' : 'Expandir em tela inteira'}
+            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition flex items-center gap-1.5 font-bold text-[11px] border border-slate-700"
           >
             {isFullscreen ? (
               <>
                 <Minimize2 className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">Sair Tela Cheia</span>
+                <span className="hidden sm:inline">Modo Janela</span>
               </>
             ) : (
               <>
-                <Maximize2 className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">Modo Imersivo</span>
+                <Maximize2 className="w-3.5 h-3.5 text-amber-300" />
+                <span className="hidden sm:inline text-amber-300">Tela Inteira</span>
               </>
             )}
           </button>
@@ -172,7 +194,7 @@ export const InteractiveLessonViewer: React.FC<InteractiveLessonViewerProps> = (
               type="button"
               onClick={handleComplete}
               disabled={isCompleted}
-              className={`px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition ${
                 isCompleted
                   ? 'bg-emerald-600 text-white cursor-default'
                   : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white active:scale-95'
@@ -192,10 +214,10 @@ export const InteractiveLessonViewer: React.FC<InteractiveLessonViewerProps> = (
         </div>
       </div>
 
-      {/* Frame Container */}
+      {/* Frame Container taking 100% of available viewport */}
       <div
         className={`relative flex-1 w-full bg-slate-950 flex items-center justify-center overflow-hidden ${
-          isFullscreen ? 'h-[calc(100vh-60px)]' : deviceMode === 'mobile' ? 'min-h-[580px]' : 'min-h-[520px]'
+          isFullscreen ? 'h-[calc(100vh-46px)] flex-1' : deviceMode === 'mobile' ? 'min-h-[580px]' : 'min-h-[520px]'
         }`}
       >
         <div
@@ -212,9 +234,9 @@ export const InteractiveLessonViewer: React.FC<InteractiveLessonViewerProps> = (
             srcDoc={getDocumentSrcDoc()}
             title={title}
             sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups"
-            className="w-full h-full border-none block"
+            className="w-full h-full border-none block bg-white"
             style={{
-              minHeight: isFullscreen ? 'calc(100vh - 65px)' : deviceMode === 'mobile' ? '560px' : '520px',
+              minHeight: isFullscreen ? 'calc(100vh - 46px)' : deviceMode === 'mobile' ? '560px' : '520px',
             }}
           />
         </div>
