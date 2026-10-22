@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A0 — Introducing Yourself | Interactive English Lesson</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --primary: #0b1b3d;
+      --accent: #0284c7;
+      --accent-red: #c8102e;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --highlight: #f59e0b;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 20px; line-height: 1.5; }
+    .container { max-width: 900px; margin: 0 auto; }
+    
+    .hero {
+      background: linear-gradient(135deg, #0b1b3d, #0369a1);
+      color: white;
+      padding: 32px;
+      border-radius: 24px;
+      box-shadow: 0 10px 25px -5px rgba(11,27,61,0.3);
+      margin-bottom: 24px;
+    }
+    .badge-pill {
+      display: inline-block;
+      background: #0284c7;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .hero h1 { font-size: 28px; font-weight: 900; margin-bottom: 8px; line-height: 1.2; }
+    .hero p { font-size: 14px; opacity: 0.9; max-width: 650px; }
+    .meta-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; font-size: 12px; font-weight: 700; }
+    .meta-tag { background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 8px; }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03);
+    }
+    .card h2 { font-size: 18px; font-weight: 800; color: var(--primary); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+    
+    .vocab-card {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s;
+    }
+    .vocab-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .vocab-word { font-size: 16px; font-weight: 800; color: var(--primary); }
+    .vocab-ipa { font-size: 12px; color: var(--muted); font-family: monospace; }
+    .vocab-pt { font-size: 13px; color: #334155; margin-top: 2px; }
+    .audio-btn {
+      background: #0284c7;
+      color: white;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .audio-btn:hover { background: #0369a1; }
+
+    .dialogue-box {
+      background: #f0f9ff;
+      border-left: 4px solid var(--accent);
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    .dialogue-speaker { font-weight: 800; color: #0369a1; font-size: 13px; margin-bottom: 4px; }
+    .dialogue-en { font-size: 15px; font-weight: 600; color: #0c4a6e; }
+    .dialogue-pt { font-size: 13px; color: #64748b; margin-top: 2px; font-style: italic; }
+
+    .quiz-q { margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px dashed var(--border); }
+    .quiz-q p { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+    .quiz-options { display: flex; gap: 8px; flex-wrap: wrap; }
+    .quiz-opt {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .quiz-opt:hover { background: #e2e8f0; }
+    .quiz-opt.correct { background: #dcfce7 !important; border-color: #22c55e !important; color: #15803d !important; }
+    .quiz-opt.wrong { background: #fee2e2 !important; border-color: #ef4444 !important; color: #b91c1c !important; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="hero">
+      <div class="badge-pill">💼 Business English • Nível A0 • Aula #1</div>
+      <h1>A0 — Introducing Yourself | Interactive English Lesson</h1>
+      <p>Aprenda a se apresentar em situações profissionais e casuais em inglês britânico. Diga seu nome, país de origem, cargo e faça saudações formais com pronúncia nativa (RP).</p>
+      <div class="meta-row">
+        <span class="meta-tag">🎯 CEFR: A0 Beginner</span>
+        <span class="meta-tag">⏱️ Duração: ~15 min</span>
+        <span class="meta-tag">⭐ Recompensa: +75 XP</span>
+        <span class="meta-tag">🇬🇧 Sotaque Britânico</span>
+      </div>
+    </header>
+
+    <!-- Key Vocabulary -->
+    <section class="card">
+      <h2>📚 1. Key Business Phrases & Introductions</h2>
+      <div class="grid-2">
+        <div class="vocab-card">
+          <div>
+            <div class="vocab-word">Hello, my name is...</div>
+            <div class="vocab-ipa">/həˈləʊ maɪ neɪm ɪz/</div>
+            <div class="vocab-pt">Olá, meu nome é...</div>
+          </div>
+          <button class="audio-btn" onclick="speak('Hello, my name is John.')" title="Ouvir">🔊</button>
+        </div>
+
+        <div class="vocab-card">
+          <div>
+            <div class="vocab-word">Pleased to meet you.</div>
+            <div class="vocab-ipa">/pliːzd tuː miːt juː/</div>
+            <div class="vocab-pt">Muito prazer em conhecê-lo(a).</div>
+          </div>
+          <button class="audio-btn" onclick="speak('Pleased to meet you.')" title="Ouvir">🔊</button>
+        </div>
+
+        <div class="vocab-card">
+          <div>
+            <div class="vocab-word">I am from Brazil.</div>
+            <div class="vocab-ipa">/aɪ æm frɒm brəˈzɪl/</div>
+            <div class="vocab-pt">Eu sou do Brasil.</div>
+          </div>
+          <button class="audio-btn" onclick="speak('I am from Brazil.')" title="Ouvir">🔊</button>
+        </div>
+
+        <div class="vocab-card">
+          <div>
+            <div class="vocab-word">I am a manager.</div>
+            <div class="vocab-ipa">/aɪ æm ə ˈmæn.ɪ.dʒər/</div>
+            <div class="vocab-pt">Eu sou um(a) gerente.</div>
+          </div>
+          <button class="audio-btn" onclick="speak('I am a manager.')" title="Ouvir">🔊</button>
+        </div>
+
+        <div class="vocab-card">
+          <div>
+            <div class="vocab-word">Have a great day!</div>
+            <div class="vocab-ipa">/hæv ə ɡreɪt deɪ/</div>
+            <div class="vocab-pt">Tenha um ótimo dia!</div>
+          </div>
+          <button class="audio-btn" onclick="speak('Have a great day!')" title="Ouvir">🔊</button>
+        </div>
+
+        <div class="vocab-card">
+          <div>
+            <div class="vocab-word">Cheers!</div>
+            <div class="vocab-ipa">/tʃɪəz/</div>
+            <div class="vocab-pt">Obrigado! / Até mais! (Britânico)</div>
+          </div>
+          <button class="audio-btn" onclick="speak('Cheers!')" title="Ouvir">🔊</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Professional Dialogue -->
+    <section class="card">
+      <h2>💬 2. Corporate Dialogue Simulation</h2>
+      
+      <div class="dialogue-box">
+        <div class="dialogue-speaker">🇬🇧 Teacher Marcelo:</div>
+        <div class="dialogue-en">"Good morning! Welcome to the London office. My name is Marcelo."</div>
+        <div class="dialogue-pt">Bom dia! Bem-vindo ao escritório de Londres. Meu nome é Marcelo.</div>
+        <button class="audio-btn" style="margin-top: 8px; width: 28px; height: 28px; font-size: 11px;" onclick="speak('Good morning! Welcome to the London office. My name is Marcelo.')">🔊</button>
+      </div>
+
+      <div class="dialogue-box" style="background: #fdf2f8; border-color: #ec4899;">
+        <div class="dialogue-speaker" style="color: #be185d;">💼 Student (You):</div>
+        <div class="dialogue-en">"Good morning! Pleased to meet you. I am Lucas, and I am from São Paulo."</div>
+        <div class="dialogue-pt">Bom dia! Muito prazer em conhecê-lo. Eu sou Lucas, e sou de São Paulo.</div>
+        <button class="audio-btn" style="margin-top: 8px; width: 28px; height: 28px; font-size: 11px; background: #be185d;" onclick="speak('Good morning! Pleced to meet you. I am Lucas, and I am from São Paulo.')">🔊</button>
+      </div>
+    </section>
+
+    <!-- Interactive Quiz -->
+    <section class="card">
+      <h2>✍️ 3. Quick Knowledge Check</h2>
+
+      <div class="quiz-q">
+        <p>1. Como você responde profissionalmente a "Pleased to meet you"?</p>
+        <div class="quiz-options">
+          <button class="quiz-opt" onclick="checkAnswer(this, true)">Pleased to meet you too!</button>
+          <button class="quiz-opt" onclick="checkAnswer(this, false)">Bye bye now!</button>
+          <button class="quiz-opt" onclick="checkAnswer(this, false)">No, I am not.</button>
+        </div>
+      </div>
+
+      <div class="quiz-q">
+        <p>2. Qual frase está gramaticalmente correta em inglês?</p>
+        <div class="quiz-options">
+          <button class="quiz-opt" onclick="checkAnswer(this, true)">I am from Brazil.</button>
+          <button class="quiz-opt" onclick="checkAnswer(this, false)">I have from Brazil.</button>
+          <button class="quiz-opt" onclick="checkAnswer(this, false)">I is from Brazil.</button>
+        </div>
+      </div>
+
+      <div class="quiz-q">
+        <p>3. Qual palavra britânica informal expressa tanto "Obrigado" quanto "Até logo"?</p>
+        <div class="quiz-options">
+          <button class="quiz-opt" onclick="checkAnswer(this, true)">Cheers!</button>
+          <button class="quiz-opt" onclick="checkAnswer(this, false)">Sorry!</button>
+          <button class="quiz-opt" onclick="checkAnswer(this, false)">Never mind.</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function speak(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'en-GB';
+        utter.rate = 0.95;
+        const voices = window.speechSynthesis.getVoices();
+        const gbVoice = voices.find(v => v.lang === 'en-GB' || v.lang.includes('GB'));
+        if (gbVoice) utter.voice = gbVoice;
+        window.speechSynthesis.speak(utter);
+      }
+    }
+
+    function checkAnswer(btn, isCorrect) {
+      const parent = btn.parentElement;
+      const opts = parent.querySelectorAll('.quiz-opt');
+      opts.forEach(b => b.classList.remove('correct', 'wrong'));
+      if (isCorrect) {
+        btn.classList.add('correct');
+      } else {
+        btn.classList.add('wrong');
+      }
+    }
+  </script>
+</body>
+</html>

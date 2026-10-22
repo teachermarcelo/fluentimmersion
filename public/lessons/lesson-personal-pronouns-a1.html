@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Personal Pronouns | A1 Interactive English Lesson</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --primary: #0b1b3d;
+      --accent: #7c3aed;
+      --accent-red: #c8102e;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --highlight: #f59e0b;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 20px; line-height: 1.5; }
+    .container { max-width: 900px; margin: 0 auto; }
+    
+    .hero {
+      background: linear-gradient(135deg, #0b1b3d, #4c1d95);
+      color: white;
+      padding: 32px;
+      border-radius: 24px;
+      box-shadow: 0 10px 25px -5px rgba(11,27,61,0.3);
+      margin-bottom: 24px;
+    }
+    .badge-pill {
+      display: inline-block;
+      background: #7c3aed;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .hero h1 { font-size: 28px; font-weight: 900; margin-bottom: 8px; line-height: 1.2; }
+    .hero p { font-size: 14px; opacity: 0.9; max-width: 650px; }
+    .meta-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; font-size: 12px; font-weight: 700; }
+    .meta-tag { background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 8px; }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03);
+    }
+    .card h2 { font-size: 18px; font-weight: 800; color: var(--primary); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    
+    .pronouns-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    .pronouns-table th {
+      background: #f1f5f9;
+      color: var(--primary);
+      text-align: left;
+      padding: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      border-bottom: 2px solid var(--border);
+    }
+    .pronouns-table td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .pronouns-table tr:hover { background: #faf5ff; }
+
+    .audio-btn {
+      background: #7c3aed;
+      color: white;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      transition: background 0.2s;
+    }
+    .audio-btn:hover { background: #6d28d9; }
+
+    .dialogue-box {
+      background: #faf5ff;
+      border-left: 4px solid var(--accent);
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    .dialogue-speaker { font-weight: 800; color: #6d28d9; font-size: 13px; margin-bottom: 4px; }
+    .dialogue-en { font-size: 15px; font-weight: 600; color: #3b0764; }
+    .dialogue-pt { font-size: 13px; color: #64748b; margin-top: 2px; font-style: italic; }
+
+    .quiz-q { margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px dashed var(--border); }
+    .quiz-q p { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+    .quiz-options { display: flex; gap: 8px; flex-wrap: wrap; }
+    .quiz-opt {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .quiz-opt:hover { background: #e2e8f0; }
+    .quiz-opt.correct { background: #dcfce7 !important; border-color: #22c55e !important; color: #15803d !important; }
+    .quiz-opt.wrong { background: #fee2e2 !important; border-color: #ef4444 !important; color: #b91c1c !important; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="hero">
+      <div class="badge-pill">🇬🇧 Gramática & Fala • Nível A1 • Aula #18</div>
+      <h1>Personal Pronouns | A1 Interactive English Lesson</h1>
+      <p>Aprenda a usar os pronomes pessoais em inglês (Subject Pronouns & Object Pronouns) para construir frases naturais, fluidas e com pronúncia britânica autêntica.</p>
+      <div class="meta-row">
+        <span class="meta-tag">🎯 CEFR: A1 Elementary</span>
+        <span class="meta-tag">⏱️ Duração: ~15 min</span>
+        <span class="meta-tag">⭐ Recompensa: +75 XP</span>
+        <span class="meta-tag">🎙️ Fala & Audição</span>
+      </div>
+    </header>
+
+    <!-- Pronouns Guide Table -->
+    <section class="card">
+      <h2>📘 1. Guia Completo de Pronomes em Inglês</h2>
+      <div style="overflow-x: auto;">
+        <table class="pronouns-table">
+          <thead>
+            <tr>
+              <th>Pronome Sujeito</th>
+              <th>Fonética IPA</th>
+              <th>Pronome Objeto</th>
+              <th>Significado (PT)</th>
+              <th>Exemplo Prático</th>
+              <th>Áudio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>I</strong></td>
+              <td>/aɪ/</td>
+              <td>me /miː/</td>
+              <td>Eu / Me, mim</td>
+              <td><em>I study English every day.</em></td>
+              <td><button class="audio-btn" onclick="speak('I study English every day.')">🔊</button></td>
+            </tr>
+            <tr>
+              <td><strong>You</strong></td>
+              <td>/juː/</td>
+              <td>you /juː/</td>
+              <td>Você / Vocês</td>
+              <td><em>You speak English very well.</em></td>
+              <td><button class="audio-btn" onclick="speak('You speak English very well.')">🔊</button></td>
+            </tr>
+            <tr>
+              <td><strong>He</strong></td>
+              <td>/hiː/</td>
+              <td>him /hɪm/</td>
+              <td>Ele / O, lhe</td>
+              <td><em>He lives in London.</em></td>
+              <td><button class="audio-btn" onclick="speak('He lives in London.')">🔊</button></td>
+            </tr>
+            <tr>
+              <td><strong>She</strong></td>
+              <td>/ʃiː/</td>
+              <td>her /hɜː/</td>
+              <td>Ela / A, lhe</td>
+              <td><em>She is a doctor.</em></td>
+              <td><button class="audio-btn" onclick="speak('She is a doctor.')">🔊</button></td>
+            </tr>
+            <tr>
+              <td><strong>It</strong></td>
+              <td>/ɪt/</td>
+              <td>it /ɪt/</td>
+              <td>Ele/Ela (coisas, animais)</td>
+              <td><em>It is cold today.</em></td>
+              <td><button class="audio-btn" onclick="speak('It is cold today.')">🔊</button></td>
+            </tr>
+            <tr>
+              <td><strong>We</strong></td>
+              <td>/wiː/</td>
+              <td>us /ʌs/</td>
+              <td>Nós / Nos</td>
+              <td><em>We are learning together.</em></td>
+              <td><button class="audio-btn" onclick="speak('We are learning together.')">🔊</button></td>
+            </tr>
+            <tr>
+              <td><strong>They</strong></td>
+              <td>/ðeɪ/</td>
+              <td>them /ðem/</td>
+              <td>Eles / Elas</td>
+              <td><em>They are my friends.</em></td>
+              <td><button class="audio-btn" onclick="speak('They are my friends.')">🔊</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Contextual Dialogue -->
+    <section class="card">
+      <h2>💬 2. Diálogo em Ação: Conhecendo Colegas</h2>
+      
+      <div class="dialogue-box">
+        <div class="dialogue-speaker">🇬🇧 Teacher Marcelo:</div>
+        <div class="dialogue-en">"Who is that over there? Is she in our class?"</div>
+        <div class="dialogue-pt">Quem é aquela ali? Ela está na nossa turma?</div>
+        <button class="audio-btn" style="margin-top: 8px; width: 28px; height: 28px; font-size: 11px;" onclick="speak('Who is that over there? Is she in our class?')">🔊</button>
+      </div>
+
+      <div class="dialogue-box" style="background: #f0fdf4; border-color: #22c55e;">
+        <div class="dialogue-speaker" style="color: #15803d;">🎓 Student:</div>
+        <div class="dialogue-en">"Yes! Her name is Sarah. She is from Manchester, and they work together."</div>
+        <div class="dialogue-pt">Sim! O nome dela é Sarah. Ela é de Manchester, e eles trabalham juntos.</div>
+        <button class="audio-btn" style="margin-top: 8px; width: 28px; height: 28px; font-size: 11px; background: #22c55e;" onclick="speak('Yes! Her name is Sarah. She is from Manchester, and they work together.')">🔊</button>
+      </div>
+    </section>
+
+    <!-- Interactive Quiz -->
+    <section class="card">
+      <h2>✍️ 3. Exercícios Rápidos de Fixação</h2>
+
+      <div class="quiz-q">
+        <p>1. Complete a frase: "David is my brother. _____ is 25 years old."</p>
+        <div class="quiz-options">
+          <button class="quiz-opt" onclick="checkAnswer(this, true)">He</button>
+          <button class="quiz-opt" onclick="checkAnswer(this, false)">She</button>
+          <button class="quiz-opt" onclick="checkAnswer(this, false)">They</button>
+        </div>
+      </div>
+
+      <div class="quiz-q">
+        <p>2. Complete com o pronome correto: "Look at the Big Ben clock! _____ is beautiful."</p>
+        <div class="quiz-options">
+          <button class="quiz-opt" onclick="checkAnswer(this, true)">It</button>
+          <button class="quiz-opt" onclick="checkAnswer(this, false)">He</button>
+          <button class="quiz-opt" onclick="checkAnswer(this, false)">She</button>
+        </div>
+      </div>
+
+      <div class="quiz-q">
+        <p>3. Qual frase usa o pronome objeto corretamente?</p>
+        <div class="quiz-options">
+          <button class="quiz-opt" onclick="checkAnswer(this, true)">Please call me later.</button>
+          <button class="quiz-opt" onclick="checkAnswer(this, false)">Please call I later.</button>
+          <button class="quiz-opt" onclick="checkAnswer(this, false)">Please call we later.</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function speak(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'en-GB';
+        utter.rate = 0.95;
+        const voices = window.speechSynthesis.getVoices();
+        const gbVoice = voices.find(v => v.lang === 'en-GB' || v.lang.includes('GB'));
+        if (gbVoice) utter.voice = gbVoice;
+        window.speechSynthesis.speak(utter);
+      }
+    }
+
+    function checkAnswer(btn, isCorrect) {
+      const parent = btn.parentElement;
+      const opts = parent.querySelectorAll('.quiz-opt');
+      opts.forEach(b => b.classList.remove('correct', 'wrong'));
+      if (isCorrect) {
+        btn.classList.add('correct');
+      } else {
+        btn.classList.add('wrong');
+      }
+    }
+  </script>
+</body>
+</html>

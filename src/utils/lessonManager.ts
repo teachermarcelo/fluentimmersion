@@ -73,6 +73,59 @@ export const PRELOADED_LESSON_FAMILY_A1: Lesson = {
   customHtml: '/lessons/lesson-family-members-a1.html',
 };
 
+// Pre-loaded Lesson A0 Introducing Yourself (Business English)
+export const PRELOADED_LESSON_INTRODUCING_A0: Lesson = {
+  id: 'custom-les-introducing-yourself-a0',
+  level: 'A0',
+  title: 'AO — Introducing Yourself | Interactive English Lesson',
+  description: 'Lição interativa da trilha [BUSINESS] criada pelo Teacher Marcelo. Apresentações profissionais, pronúncia britânica e saudações.',
+  skill: 'speaking',
+  category: 'business',
+  targetAudience: 'curriculum_adults',
+  orderIndex: 1,
+  durationMinutes: 15,
+  xpReward: 75,
+  iconName: 'Briefcase',
+  content: {
+    readingText: 'Hello, my name is... Pleased to meet you. I am from Brazil. Welcome to the London office.',
+  },
+  customHtml: '/lessons/lesson-introducing-yourself-a0.html',
+};
+
+// Pre-loaded Lesson A1 Personal Pronouns
+export const PRELOADED_LESSON_PRONOUNS_A1: Lesson = {
+  id: 'custom-les-personal-pronouns-a1',
+  level: 'A1',
+  title: 'Personal Pronouns | A1 Interactive English Lesson',
+  description: 'Lição interativa da trilha [GERAL] criada pelo Teacher Marcelo. Domine os pronomes pessoais sujeito e objeto com áudio nativo britânico.',
+  skill: 'speaking',
+  category: 'geral',
+  targetAudience: 'curriculum_adults',
+  orderIndex: 18,
+  durationMinutes: 15,
+  xpReward: 75,
+  iconName: 'Users',
+  content: {
+    readingText: 'Personal Pronouns: I, you, he, she, it, we, they. Subject and object forms with British RP pronunciation.',
+  },
+  customHtml: '/lessons/lesson-personal-pronouns-a1.html',
+};
+
+/**
+ * Normaliza níveis com tolerância a digitação (AO -> A0)
+ */
+export function normalizeLevel(lvl?: string): CEFRLevel {
+  const clean = (lvl || '').trim().toUpperCase();
+  if (clean === 'AO' || clean === 'A0') return 'A0';
+  if (clean === 'A1') return 'A1';
+  if (clean === 'A2') return 'A2';
+  if (clean === 'B1') return 'B1';
+  if (clean === 'B2') return 'B2';
+  if (clean === 'C1') return 'C1';
+  if (clean === 'C2') return 'C2';
+  return 'A1';
+}
+
 /**
  * Parses raw HTML or standalone React artifact code to extract metadata
  */
@@ -146,7 +199,10 @@ export function parseImportedLessonCode(rawCode: string): {
 export function getAllAvailableLessons(): Lesson[] {
   let customLessons: Lesson[] = [];
   if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem(CUSTOM_LESSONS_STORAGE_KEY);
+    const saved =
+      localStorage.getItem(CUSTOM_LESSONS_STORAGE_KEY) ||
+      localStorage.getItem('fluent_custom_lessons') ||
+      localStorage.getItem('fluent_lessons');
     if (saved) {
       try {
         customLessons = JSON.parse(saved);
@@ -156,7 +212,7 @@ export function getAllAvailableLessons(): Lesson[] {
     }
   }
 
-  // Preloaded interactive lessons (Lesson 13 Dates, Lesson Fruits A0, and Lesson Family Members A1)
+  // Preloaded interactive lessons
   const preloaded: Lesson[] = [];
   const hasLesson13 =
     customLessons.some((l) => l.id === PRELOADED_LESSON_13.id || l.title.includes('Dates & Birthdays')) ||
@@ -173,13 +229,47 @@ export function getAllAvailableLessons(): Lesson[] {
     ALL_LESSONS.some((l) => l.title.includes('Family Members'));
   if (!hasFamilyMembers) preloaded.push(PRELOADED_LESSON_FAMILY_A1);
 
+  const hasIntroducingA0 =
+    customLessons.some((l) => l.id === PRELOADED_LESSON_INTRODUCING_A0.id || l.title.includes('Introducing Yourself')) ||
+    ALL_LESSONS.some((l) => l.title.includes('Introducing Yourself'));
+  if (!hasIntroducingA0) preloaded.push(PRELOADED_LESSON_INTRODUCING_A0);
+
+  const hasPronounsA1 =
+    customLessons.some((l) => l.id === PRELOADED_LESSON_PRONOUNS_A1.id || l.title.includes('Personal Pronouns')) ||
+    ALL_LESSONS.some((l) => l.title.includes('Personal Pronouns'));
+  if (!hasPronounsA1) preloaded.push(PRELOADED_LESSON_PRONOUNS_A1);
+
   const baseLessons = [...preloaded, ...ALL_LESSONS];
 
   // Merge custom lessons, prioritizing newer custom ones
   const customIds = new Set(customLessons.map((l) => l.id));
   const filteredBase = baseLessons.filter((l) => !customIds.has(l.id));
 
-  return [...customLessons, ...filteredBase];
+  // Merge and normalize levels (AO -> A0)
+  return [...customLessons, ...filteredBase].map((l) => ({
+    ...l,
+    level: normalizeLevel(l.level),
+  }));
+}
+
+/**
+ * Saves full reordered sequence of lessons to localStorage and notifies listeners
+ */
+export function saveAllLessonsSequence(updatedList: Lesson[]): void {
+  if (typeof window === 'undefined') return;
+
+  // Update in-memory ALL_LESSONS
+  ALL_LESSONS.splice(0, ALL_LESSONS.length, ...updatedList);
+
+  const onlyCustom = updatedList.filter((l) => l.id.startsWith('custom-les-'));
+  try {
+    localStorage.setItem(CUSTOM_LESSONS_STORAGE_KEY, JSON.stringify(onlyCustom));
+    localStorage.setItem('fluent_custom_lessons', JSON.stringify(onlyCustom));
+  } catch (e) {
+    console.warn('Erro ao salvar sequenciamento de lições:', e);
+  }
+
+  notifyLessonsUpdated();
 }
 
 /**

@@ -63,6 +63,7 @@ import {
   getAllAvailableLessons,
   saveCustomLesson,
   deleteCustomLesson,
+  saveAllLessonsSequence,
 } from '../utils/lessonManager';
 import {
   getTeacherStudentsRoster,
@@ -251,6 +252,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
   const [lessonDuration, setLessonDuration] = useState(15);
   const [lessonXp, setLessonXp] = useState(75);
   const [htmlContent, setHtmlContent] = useState(TEMPLATES.adults_geral.html);
+  const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
 
   // AI Lesson Generator
   const [aiTopicInput, setAiTopicInput] = useState('');
@@ -727,8 +729,10 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
       return;
     }
 
+    const lessonIdToUse = editingLessonId || `custom-les-${Date.now()}`;
+
     const newLesson: Lesson = {
-      id: `custom-les-${Date.now()}`,
+      id: lessonIdToUse,
       title: lessonTitle,
       level: lessonLevel,
       skill: lessonSkill,
@@ -747,12 +751,13 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
 
     saveCustomLesson(newLesson);
     onAddCustomLesson(newLesson);
+    setEditingLessonId(null);
     const updated = getAllAvailableLessons();
     setManagedLessons(updated);
     sounds.playSuccess();
     fireCelebrationConfetti();
     alert(
-      `Lição "${lessonTitle}" publicada com sucesso na trilha [${
+      `Lição "${lessonTitle}" salva e publicada com sucesso na trilha [${
         targetAudience === 'kids' ? 'Fluent Kids' : lessonCategory.toUpperCase()
       }] na posição #${lessonOrderIndex}!`
     );
@@ -774,30 +779,31 @@ export const AdminView: React.FC<AdminViewProps> = ({ onAddCustomLesson }) => {
     });
 
     setManagedLessons(updated);
-    ALL_LESSONS.splice(0, ALL_LESSONS.length, ...updated);
+    saveAllLessonsSequence(updated);
     sounds.playPop();
   };
 
   // Direct sequence edit
   const handleSetDirectOrder = (lessonId: string, newOrder: number) => {
     const updated = managedLessons.map((l) => (l.id === lessonId ? { ...l, orderIndex: newOrder } : l));
-    updated.sort((a, b) => a.orderIndex - b.orderIndex);
+    updated.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
     setManagedLessons(updated);
-    ALL_LESSONS.splice(0, ALL_LESSONS.length, ...updated);
+    saveAllLessonsSequence(updated);
     sounds.playPop();
   };
 
   const handleDeleteLesson = (id: string) => {
     if (!confirm('Deseja realmente remover esta lição da grade?')) return;
-    const filtered = managedLessons.filter((l) => l.id !== id);
-    setManagedLessons(filtered);
-    const mockIdx = ALL_LESSONS.findIndex((l) => l.id === id);
-    if (mockIdx !== -1) ALL_LESSONS.splice(mockIdx, 1);
+    deleteCustomLesson(id);
+    const remaining = getAllAvailableLessons().filter((l) => l.id !== id);
+    setManagedLessons(remaining);
+    saveAllLessonsSequence(remaining);
     sounds.playRetry();
   };
 
   // Load lesson back into editor
   const handleEditLesson = (lesson: Lesson) => {
+    setEditingLessonId(lesson.id);
     setLessonTitle(lesson.title);
     setLessonLevel(lesson.level);
     setLessonSkill(lesson.skill);

@@ -73,11 +73,22 @@ export const CurriculumView: React.FC<CurriculumViewProps> = ({
     };
   }, []);
 
+  const normLevelStr = (lvl?: string) => (lvl || '').trim().toUpperCase().replace(/^AO$/, 'A0');
+
   const filteredLessons = allLessons
     .filter((l) => {
-      const levelMatch = l.level === currentLevel;
+      // 1. Level match with tolerance for A0/AO
+      const levelMatch = normLevelStr(l.level) === normLevelStr(currentLevel);
+
+      // 2. Skill match
       const skillMatch = selectedSkill === 'all' || l.skill === selectedSkill;
-      const categoryMatch = selectedCategory === 'all' || l.category === selectedCategory;
+
+      // 3. Category match (when 'all', displays all lessons in that CEFR level)
+      const categoryMatch =
+        selectedCategory === 'all' ||
+        l.category === selectedCategory ||
+        (!l.category && selectedCategory === 'geral');
+
       return levelMatch && skillMatch && categoryMatch;
     })
     .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
